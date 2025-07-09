@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+    
+    body {
+      font-family: 'Roboto', sans-serif;
+      padding: 40px;
+      color: #333;
+      line-height: 1.6;
+      background-color: #f9f9f9;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #e63946;
+      padding-bottom: 20px;
+    }
+    
+    h1 {
+      color: #1d3557;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    
+    .logo {
+      width: 120px;
+      margin-bottom: 15px;
+    }
+    
+    .project-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+      background: #f1faee;
+      padding: 20px;
+      border-radius: 6px;
+      border-left: 4px solid #457b9d;
+    }
+    
+    .project-info p {
+      margin: 5px 0;
+    }
+    
+    .project-info strong {
+      color: #1d3557;
+      display: inline-block;
+      min-width: 120px;
+    }
+    
+    .section {
+      margin: 40px 0;
+    }
+    
+    h2 {
+      color: #457b9d;
+      font-size: 22px;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+    
+    th {
+      background-color: #1d3557;
+      color: white;
+      padding: 12px 10px;
+      text-align: left;
+      font-weight: 500;
+    }
+    
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #e9ecef;
+      vertical-align: middle;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    
+    tr:hover {
+      background-color: rgba(69, 123, 157, 0.1);
+    }
+    
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .spec-card {
+      background: white;
+      border-radius: 6px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-top: 3px solid #e63946;
+    }
+    
+    .spec-card h3 {
+      color: #457b9d;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    
+    .spec-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1d3557;
+    }
+    
+    .spec-unit {
+      font-size: 14px;
+      color: #6c757d;
+    }
+    
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #6c757d;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      background-color: #e9ecef;
+      color: #495057;
+    }
+    
+    .badge-primary {
+      background-color: #e63946;
+      color: white;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .text-right {
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>VMS System Requirement Report</h1>
+      <p>Comprehensive system specification document</p>
+    </div>
+    
+    <div class="project-info">
+      <p><strong>Project:</strong> {{ data.project_name }}</p>
+      <p><strong>Customer:</strong> {{ data.customer_name }}</p>
+      <p><strong>Location:</strong> {{ data.location }}</p>
+      <p><strong>Assigned To:</strong> {{ data.assigned_person }}</p>
+      <p><strong>Report Date:</strong> {{ created }}</p>
+      <p><strong>Reference ID:</strong> {{ data._id }}</p>
+    </div>
+    
+    <div class="section">
+      <h2>Camera Configuration</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Brand</th>
+            <th>Resolution</th>
+            <th>FPS</th>
+            <th>Codec</th>
+            <th>Record Hours</th>
+            <th>Retention (Days)</th>
+            <th>Qty</th>
+            <th class="text-right">Bandwidth (Mbps)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cam in data.camera_configs %}
+          <tr>
+            <td>{{ cam.name }}</td>
+            <td>{{ cam.resolution }}</td>
+            <td>{{ cam.fps }}</td>
+            <td><span class="badge {% if cam.codec == 'H265' or cam.codec == 'H265+' %}badge-primary{% endif %}">{{ cam.codec }}</span></td>
+            <td>{{ cam.record_hour }} hrs</td>
+            <td>{{ cam.retention_days }} days</td>
+            <td>{{ cam.qty }}</td>
+            <td class="text-right">{{ cam.bandwidth }}</td>
+          </tr>
+          {% endfor %}
+          {% if data.camera_configs|length > 1 %}
+          <tr style="background-color: #f1faee; font-weight: 500;">
+            <td colspan="6" class="text-right">Total</td>
+            <td>{{ data.camera_configs|sum(attribute='qty') }}</td>
+            <td class="text-right">{{ data.bandwidth }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="section">
+      <h2>System Specifications</h2>
+      <div class="specs-grid">
+        <div class="spec-card">
+          <h3>Total Bandwidth</h3>
+          <div class="spec-value">{{ data.bandwidth }}</div>
+          <div class="spec-unit">Mbps</div>
+        </div>
+        
+        <div class="spec-card">
+          <h3>Storage Requirement</h3>
+          <div class="spec-value">{{ data.storage_tb }}</div>
+          <div class="spec-unit">TB</div>
+        </div>
+        
+        <div class="spec-card">
+          <h3>Server CPU</h3>
+          <div class="spec-value">{{ data.server_spec.cpu }}</div>
+          <div class="spec-unit">Cores</div>
+        </div>
+        
+        <div class="spec-card">
+          <h3>Memory</h3>
+          <div class="spec-value">{{ data.server_spec.ram_gb }}</div>
+          <div class="spec-unit">GB RAM</div>
+        </div>
+        
+        <div class="spec-card">
+          <h3>Storage</h3>
+          <div class="spec-value">{{ data.server_spec.hdd_tb }}</div>
+          <div class="spec-unit">TB HDD</div>
+        </div>
+        
+        <div class="spec-card">
+          <h3>Network</h3>
+          <div class="spec-value">{{ data.server_spec.nic }}</div>
+          <div class="spec-unit">NICs</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>This document was automatically generated by REDX VMS Requirement Portal</p>
+      <p>Confidential - For internal use only</p>
+    </div>
+  </div>
+</body>
+</html>

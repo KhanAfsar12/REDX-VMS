@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REDX VMS Requirement Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- AG Grid Community Version -->
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/dist/ag-grid-community.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/styles/ag-grid.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/styles/ag-theme-alpine.css"/>
+  <style>
+    :root {
+      --primary-color: #e63946;
+      --secondary-color: #457b9d;
+      --accent-color: #1d3557;
+      --light-color: #f1faee;
+      --dark-color: #2b2d42;
+      --success-color: #2a9d8f;
+      --warning-color: #e9c46a;
+      --danger-color: #e63946;
+      --gray-light: #f8f9fa;
+      --gray-medium: #e9ecef;
+      --gray-dark: #495057;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1, h2, h3 {
+      color: var(--accent-color);
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 10px;
+      margin-bottom: 30px;
+    }
+    
+    h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--secondary-color);
+    }
+    
+    h3 {
+      font-size: 20px;
+      font-weight: 500;
+    }
+    
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 500;
+      color: var(--dark-color);
+      font-size: 14px;
+    }
+    
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      margin-top: 8px;
+      border: 1px solid var(--gray-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--secondary-color);
+      box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
+    }
+    
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #c1121f;
+    }
+    
+    .btn-secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #31587a;
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--secondary-color);
+      color: var(--secondary-color);
+    }
+    
+    .btn-outline:hover {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+    
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background-color: #c1121f;
+    }
+    
+    .tab-btns {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      border-bottom: 1px solid var(--gray-medium);
+      padding-bottom: 15px;
+    }
+    
+    .tab-btns button {
+      padding: 10px 25px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    }
+    
+    th {
+      background-color: var(--accent-color);
+      color: white;
+      text-align: left;
+      padding: 12px 10px;
+      font-weight: 500;
+    }
+    
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--gray-medium);
+      vertical-align: middle;
+    }
+    
+    tr:nth-child(even) {
+      background-color: var(--gray-light);
+    }
+    
+    tr:hover {
+      background-color: rgba(69, 123, 157, 0.1);
+    }
+    
+    .small-input {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--gray-medium);
+    }
+    
+    .summary {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: var(--light-color);
+      border-radius: 8px;
+      border-left: 4px solid var(--success-color);
+    }
+    
+    .summary h3 {
+      margin-bottom: 15px;
+      color: var(--success-color);
+    }
+    
+    .summary p {
+      margin: 8px 0;
+      display: flex;
+    }
+    
+    .summary p strong {
+      width: 150px;
+      display: inline-block;
+      color: var(--dark-color);
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 15px;
+      margin-top: 25px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      background-color: var(--gray-light);
+      color: var(--dark-color);
+    }
+    
+    .badge-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .badge-secondary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+    
+    .action-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+      min-width: 70px;
+    }
+    
+    .action-btn + .action-btn {
+      margin-left: 5px;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    
+    .status-active {
+      background-color: var(--success-color);
+    }
+    
+    .status-inactive {
+      background-color: var(--gray-dark);
+    }
+    
+    /* AG Grid custom styling */
+    .ag-theme-alpine {
+      --ag-border-color: var(--gray-medium);
+      --ag-header-background-color: var(--accent-color);
+      --ag-header-foreground-color: white;
+      --ag-odd-row-background-color: var(--gray-light);
+      --ag-font-size: 14px;
+      --ag-font-family: 'Roboto', sans-serif;
+    }
+    
+    .ag-theme-alpine .ag-root-wrapper {
+      border-radius: 8px;
+      border: 1px solid var(--gray-medium);
+    }
+    
+    .ag-theme-alpine .ag-header-cell {
+      font-weight: 500;
+    }
+    
+    .ag-theme-alpine .ag-cell {
+      display: flex;
+      align-items: center;
+    }
+
+    /* Search bar styles */
+    .search-container {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-container input {
+      flex: 1;
+      max-width: 400px;
+      padding: 8px 12px;
+      border: 1px solid var(--gray-medium);
+      border-radius: 4px;
+    }
+
+    .search-container button {
+      padding: 8px 16px;
+    }
+
+    .search-results-count {
+      margin-left: auto;
+      font-size: 14px;
+      color: var(--gray-dark);
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .tab-btns {
+        flex-direction: column;
+      }
+      
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+
+      .search-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-results-count {
+        margin-left: 0;
+        margin-top: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>REDX VMS Requirement Portal</h1>
+    
+    <div class="tab-btns">
+      <button class="btn-primary" onclick="showCreateForm()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+        </svg>
+        Create New Entry
+      </button>
+      <button class="btn-secondary" onclick="loadHistory()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.27l.493-.87a8.025 8.025 0 0 1 .979.654l-.615.789a6.996 6.996 0 0 0-.418-.302zm1.834 1.79a6.99 6.99 0 0 0-.653-.796l.724-.69c.27.285.52.59.747.91l-.818.576zm.744 1.352a7.08 7.08 0 0 0-.214-.468l.893-.45a7.976 7.976 0 0 1 .45 1.088l-.95.313a7.023 7.023 0 0 0-.179-.483zm.53 2.507a6.991 6.991 0 0 0-.1-1.025l.985-.17c.067.386.106.778.116 1.17l-1 .025zm-.131 1.538c.033-.17.06-.339.081-.51l.993.123a7.957 7.957 0 0 1-.23 1.155l-.964-.267c.046-.165.086-.332.12-.501zm-.952 2.379c.184-.29.346-.594.486-.908l.914.405c-.16.36-.345.706-.555 1.038l-.845-.535zm-.964 1.205c.122-.122.239-.248.35-.378l.758.653a8.073 8.073 0 0 1-.401.432l-.707-.707z"/>
+          <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0v1z"/>
+          <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z"/>
+        </svg>
+        View History
+      </button>
+    </div>
+
+    <div id="form-section">
+      <div class="card">
+        <h2>Project Information</h2>
+        <form id="form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="customer_name">Customer Name</label>
+              <input type="text" id="customer_name" required placeholder="Enter customer name" />
+            </div>
+            <div class="form-group">
+              <label for="project_name">Project Name</label>
+              <input type="text" id="project_name" required placeholder="Enter project name" />
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="location">Location</label>
+              <input type="text" id="location" required placeholder="Enter project location" />
+            </div>
+            <div class="form-group">
+              <label for="assigned_person">Assigned Person</label>
+              <input type="text" id="assigned_person" required placeholder="Enter assigned person" />
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>Camera Configurations</h2>
+          <button type="button" class="btn-primary" onclick="addRow()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </svg>
+            Add Camera
+          </button>
+        </div>
+        
+        <div style="overflow-x: auto;">
+          <table id="cameraTable">
+            <thead>
+              <tr>
+                <th>Camera Brand</th>
+                <th>Resolution</th>
+                <th>FPS</th>
+                <th>Codec</th>
+                <th>Record Hour</th>
+                <th>Retention (Days)</th>
+                <th>Quantity</th>
+                <th>Bitrate (Kbps)</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="cameraBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" form="form" class="btn-primary" onclick="handleFormSubmit(event)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/>
+          </svg>
+          Submit Requirement
+        </button>
+        <button type="button" class="btn-outline" onclick="downloadJSON()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+          </svg>
+          Export JSON
+        </button>
+      </div>
+
+      <div class="summary card hidden" id="summary">
+        <h3>Requirement Summary</h3>
+        <div id="summary-content" style="background-color: rgb(239, 251, 253);"></div>
+        <button id="pdfBtn" class="btn-primary" style="margin-top: 15px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5.523 10.424c.14-.082.293-.162.459-.238a7.878 7.878 0 0 1-.45.606c-.28.337-.498.516-.635.572a.266.266 0 0 1-.035.012.282.282 0 0 1-.026-.044c-.056-.11-.054-.216.04-.36.106-.165.319-.354.647-.548zm2.455-1.647c-.119.025-.237.05-.356.078a21.035 21.035 0 0 0 .5-1.05 11.96 11.96 0 0 0 .51.858c-.217.032-.436.07-.654.114zm2.525.939a3.888 3.888 0 0 1-.435-.41c.228.005.434.022.612.054.317.057.466.147.518.209a.095.095 0 0 1 .026.064.436.436 0 0 1-.06.2.307.307 0 0 1-.094.124.107.107 0 0 1-.069.015c-.09-.003-.258-.066-.498-.256zM8.278 6.97c-.04.244-.108.524-.2.829a4.86 4.86 0 0 1-.089-.346c-.076-.353-.087-.63-.046-.822.038-.177.11-.248.196-.283a.517.517 0 0 1 .145-.04c.013.03.028.092.032.198.005.122-.007.277-.038.465z"/>
+            <path fill-rule="evenodd" d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm5.5 1.5v2a1 1 0 0 0 1 1h2l-3-3zM4.165 13.668c.09.18.23.343.438.419.207.075.412.04.58-.03.318-.13.635-.436.926-.786.333-.401.683-.927 1.021-1.465a.71.71 0 0 1 .33-.315c.366-.143.638-.516.537-.877-.1-.362-.454-.69-.883-.763a3.826 3.826 0 0 0-.434-.044 8.328 8.328 0 0 0-.505-.053 3.766 3.766 0 0 0-.408-.028.826.826 0 0 0-.402.079.697.697 0 0 0-.273.252.745.745 0 0 0-.106.294 7.22 7.22 0 0 0-.004.443c0 .036.003.09.005.135.003.144.007.287.012.428l.003.018c.005.11.022.22.034.316.006.052.012.103.02.153.006.05.013.099.022.148.013.057.028.114.044.17a1.03 1.03 0 0 0 .17.283c.112.14.257.242.414.31.167.072.35.102.543.077.238-.03.444-.165.604-.411.146-.222.248-.487.306-.776.1-.534.113-1.078.098-1.602a4.997 4.997 0 0 0-.106-1.142 3.092 3.092 0 0 0-.321-.826 1.607 1.607 0 0 0-.47-.58c-.23-.166-.526-.267-.875-.304a2.777 2.777 0 0 0-.629-.031 6.824 6.824 0 0 0-.618.084 2.85 2.85 0 0 0-.522.171 2.148 2.148 0 0 0-.458.319c-.133.12-.25.267-.35.438-.2.345-.296.75-.293 1.175a3.575 3.575 0 0 0 .088.814 7.968 7.968 0 0 0 2.142 3.874Zm3.726-6.687c.04.055.085.108.128.16a6.554 6.554 0 0 1 .46.581c.126.177.24.37.34.575.1.204.173.407.232.607.06.2.105.395.135.592.03.197.045.397.045.602 0 .206-.016.414-.045.622a3.55 3.55 0 0 1-.135.597 5.929 5.929 0 0 1-.232.606 6.077 6.077 0 0 1-.34.575c-.126.177-.277.355-.46.581a6.683 6.683 0 0 1-.128.16l-.002.001a6.786 6.786 0 0 1-.312-.367c-.25-.31-.47-.654-.656-1.028a7.063 7.063 0 0 1-.356-.852 5.423 5.423 0 0 1-.203-.727 3.818 3.818 0 0 1-.06-.415c-.01-.136-.02-.273-.02-.41 0-.14.01-.277.03-.415a3.817 3.817 0 0 1 .09-.412 5.416 5.416 0 0 1 .203-.726 7.07 7.07 0 0 1 .356-.853c.186-.374.406-.718.656-1.028.1-.124.21-.242.312-.367l.002.001z"/>
+          </svg>
+          Download PDF
+        </button>
+      </div>
+    </div>
+
+    <div id="history-section" class="hidden">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h2>Submission History</h2>
+          <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search across all columns..." />
+            <button class="btn-secondary" onclick="applySearch()">Search</button>
+            <span id="searchResultsCount" class="search-results-count"></span>
+          </div>
+        </div>
+        <div id="historyGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const codecOptions = ["H264", "H264+", "H265", "H265+"];
+    const resolutionOptions = [
+      "12MP (4000x3000)", "12MP (4000x3072)", "9MP (3072x3072)", "9MP (4096x2160)",
+      "8MP (3840x2160)", "7MP (3072x2304)", "6MP (3072x2048)", "6MP (2560x2560)",
+      "5MP (3072x1728)", "5MP (2560x2048)", "5MP (2592x1944)", "5MP (2560x1920)",
+      "4MP (2688x1520)", "4MP (2048x2048)", "4MP (2560x1440)", "3MP (3012x1152)",
+      "QXGA (2048x1536)", "1080P (1920x1080)", "2MP (1600x1200)", "2MP (1280x1280)",
+      "1.3MP (1280x960)", "720P (1280x720)", "4CIF (704x576)", "D1 (704x480)",
+      "nHD (640x360)", "CIF (352x288)"
+    ];
+    const cameraBrands = [
+      "Honeywell", "CP Plus", "Hikvision", "Dahua", "Godrej", "Zicom", "Panasonic", 
+      "Bosch", "Sony", "Axis", "Samsung", "Uniview", "Vivotek", "Mobotix", "Pelco", 
+      "Avigilon", "Hanwha", "FLIR", "Tiandy", "IDIS"
+    ];
+    const brandDefaults = {
+      "Honeywell": { resolution: "5MP (2560x1920)", codec: "H265", fps: 25 },
+      "CP Plus": { resolution: "720P (1280x720)", codec: "H264", fps: 15 },
+      "Hikvision": { resolution: "1080P (1920x1080)", codec: "H265", fps: 15 },
+      "Axis": { resolution: "4MP (2688x1520)", codec: "H265+", fps: 25 },
+      "Dahua": { resolution: "5MP (2560x1920)", codec: "H265", fps: 20 }
+    };
+
+    let latestID = null;
+    let gridApi = null; // Store the grid API
+    let allRowData = []; // Store all row data for searching
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize the form
+      addRow();
+      
+      // Set up event listeners
+      document.getElementById("pdfBtn").addEventListener("click", handlePdfDownload);
+      
+      // Add event listener for Enter key in search input
+      document.getElementById("searchInput").addEventListener("keyup", function(event) {
+        if (event.key === "Enter") {
+          applySearch();
+        }
+      });
+    });
+
+    // Form Functions
+    function showCreateForm() {
+      document.getElementById("form-section").classList.remove("hidden");
+      document.getElementById("history-section").classList.add("hidden");
+    }
+
+    function addRow(data = {}) {
+      const tbody = document.getElementById("cameraBody");
+      const row = document.createElement("tr");
+
+      const brandSelect = document.createElement("select");
+      brandSelect.className = 'small-input';
+      brandSelect.innerHTML = cameraBrands.map(opt => 
+        `<option value="${opt}" ${data.name === opt ? 'selected' : ''}>${opt}</option>`
+      ).join('');
+
+      brandSelect.addEventListener("change", function() {
+        const selected = brandSelect.value;
+        const defaults = brandDefaults[selected];
+        if (defaults) {
+          row.querySelector("select[data-field='resolution']").value = defaults.resolution;
+          row.querySelector("select[data-field='codec']").value = defaults.codec;
+          row.querySelector("input[data-field='fps']").value = defaults.fps;
+        }
+      });
+
+      row.innerHTML = `
+        <td></td>
+        <td>
+          <select data-field='resolution' class='small-input'>
+            ${resolutionOptions.map(opt => 
+              `<option value="${opt}" ${data.resolution === opt ? 'selected' : ''}>${opt}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='fps' min="1" max="60" 
+                value='${data.fps || 15}' />
+        </td>
+        <td>
+          <select data-field='codec' class='small-input'>
+            ${codecOptions.map(opt => 
+              `<option value="${opt}" ${data.codec === opt ? 'selected' : ''}>${opt}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='record_hour' 
+                min="1" max="24" value='${data.record_hour || 1}' />
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='retention_days' min="1" 
+                value='${data.retention_days || 30}' />
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='qty' min="1" 
+                value='${data.qty || 1}' />
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='bitrate_kbps' min="100" 
+                value='${data.bitrate_kbps || ""}' placeholder="Auto" />
+        </td>
+        <td>
+          <button type='button' class="btn-danger" onclick='removeRow(this)'>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+          </button>
+        </td>
+      `;
+      
+      row.children[0].appendChild(brandSelect);
+      tbody.appendChild(row);
+
+      if (!data.name && brandDefaults["Honeywell"]) {
+        brandSelect.value = "Honeywell";
+        brandSelect.dispatchEvent(new Event('change'));
+      }
+    }
+
+    function removeRow(btn) {
+      const row = btn.closest("tr");
+      row.classList.add("removing");
+      setTimeout(() => {
+        row.remove();
+      }, 200);
+    }
+
+    function getCameraData() {
+      const rows = document.querySelectorAll("#cameraBody tr");
+      return Array.from(rows).map(row => {
+        const cells = row.querySelectorAll("td");
+        return {
+          name: cells[0].querySelector("select").value,
+          resolution: cells[1].querySelector("select").value,
+          fps: parseInt(cells[2].querySelector("input").value),
+          codec: cells[3].querySelector("select").value,
+          record_hour: parseInt(cells[4].querySelector("input").value),
+          retention_days: parseInt(cells[5].querySelector("input").value),
+          qty: parseInt(cells[6].querySelector("input").value),
+          bitrate_kbps: cells[7].querySelector("input").value ? 
+                      parseInt(cells[7].querySelector("input").value) : null
+        };
+      });
+    }
+
+    // API Functions
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const customerName = document.getElementById("customer_name").value;
+      const projectName = document.getElementById("project_name").value;
+      
+      if (!customerName || !projectName) {
+        showToast("Customer and Project names are required", "error");
+        return;
+      }
+      
+      const cameraConfigs = getCameraData();
+      if (cameraConfigs.length === 0) {
+        showToast("Please add at least one camera configuration", "error");
+        return;
+      }
+
+      const payload = {
+        customer_name: customerName,
+        project_name: projectName,
+        location: document.getElementById("location").value,
+        assigned_person: document.getElementById("assigned_person").value,
+        camera_configs: cameraConfigs,
+      };
+
+      try {
+        const submitBtn = document.querySelector("button[type='submit']");
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="spin">
+            <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+            <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+          </svg>
+          Processing...
+        `;
+
+        const res = await fetch("http://localhost:8000/requirement/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.detail || "Server error");
+        }
+
+        const data = await res.json();
+        latestID = data.id;
+
+        const summary = document.getElementById("summary");
+        summary.classList.remove("hidden");
+        
+        document.getElementById("summary-content").innerHTML = `
+          <p><strong>Customer:</strong> ${data.customer_name}</p>
+          <p><strong>Project:</strong> ${data.project_name}</p>
+          <p><strong>Location:</strong> ${data.location || "-"}</p>
+          <p><strong>Assigned To:</strong> ${data.assigned_person || "-"}</p>
+          <p><strong>Total Cameras:</strong> ${data.camera_configs.reduce((a,c)=>a+(c.qty || 1), 0)}</p>
+          <p><strong>Total Bandwidth:</strong> ${data.bandwidth || "N/A"} Mbps</p>
+          <p><strong>Total Storage:</strong> ${data.storage_tb || "N/A"} TB</p>
+          <p><strong>Submission ID:</strong> ${data.id}</p>
+          <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+        `;
+
+        document.getElementById("pdfBtn").style.display = "inline-block";
+        showToast("Requirement submitted successfully", "success");
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        showToast(error.message || "Error submitting requirement", "error");
+      } finally {
+        const submitBtn = document.querySelector("button[type='submit']");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `Submit Requirement`;
+      }
+    }
+
+    // AG Grid Functions
+    function initGrid(data) {
+      const gridDiv = document.querySelector('#historyGrid');
+      
+      // Clear previous grid if it exists
+      if (gridApi) {
+        try{
+          gridApi.destroy();
+        }
+        catch(e){
+          console.warn("Error destroying grid: ", e);
+        }
+        gridApi = null;
+      }
+      
+      // Store all row data for searching
+      allRowData = data;
+      
+      const gridOptions = {
+        columnDefs: [
+          { 
+            headerName: "Customer", 
+            field: "customer_name",
+            filter: true,
+            sortable: true 
+          },
+          { 
+            headerName: "Project", 
+            field: "project_name",
+            filter: true,
+            sortable: true 
+          },
+          { 
+            headerName: "Location", 
+            field: "location",
+            filter: true 
+          },
+          { 
+            headerName: "Assigned", 
+            field: "assigned_person",
+            filter: true 
+          },
+          { 
+            headerName: "Date", 
+            field: "created_at",
+            valueFormatter: dateFormatter,
+            sortable: true,
+            comparator: dateComparator
+          },
+          {
+            headerName: "Actions",
+            cellRenderer: actionRenderer,
+            cellRendererParams: {
+              onPdfClick: handlePdfExport,
+              onLoadClick: loadEntry
+            },
+            sortable: false,
+            filter: false,
+            width: 150
+          }
+        ],
+        defaultColDef: {
+          flex: 1,
+          minWidth: 100,
+          resizable: true
+        },
+        rowData: data,
+        pagination: true,
+        paginationPageSize: 10,
+        domLayout: 'autoHeight',
+        onGridReady: (params) => {
+          gridApi = params.api;
+          params.api.sizeColumnsToFit();
+        }
+      };
+
+      // Create new grid
+      new agGrid.Grid(gridDiv, gridOptions);
+      
+      // Update search results count
+      updateSearchResultsCount(data.length);
+    }
+
+    // Apply search across all columns
+    function applySearch() {
+      const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+      
+      if (!searchTerm) {
+        // If search is empty, show all data
+        gridApi.setRowData(allRowData);
+        updateSearchResultsCount(allRowData.length);
+        return;
+      }
+      
+      // Filter the data
+      const filteredData = allRowData.filter(row => {
+        return Object.values(row).some(value => {
+          if (value === null || value === undefined) return false;
+          return String(value).toLowerCase().includes(searchTerm);
+        });
+      });
+      
+      // Update the grid with filtered data
+      gridApi.setRowData(filteredData);
+      
+      // Update search results count
+      updateSearchResultsCount(filteredData.length);
+    }
+    
+    // Update the search results count display
+    function updateSearchResultsCount(count) {
+      const searchResultsCount = document.getElementById("searchResultsCount");
+      searchResultsCount.textContent = `${count} records found`;
+    }
+
+    // Date formatter for AG-Grid
+    function dateFormatter(params) {
+      if (!params.value) return '';
+      const date = new Date(params.value);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+
+    // Date comparator for sorting
+    function dateComparator(date1, date2) {
+      const d1 = new Date(date1);
+      const d2 = new Date(date2);
+      return d1.getTime() - d2.getTime();
+    }
+
+    // Custom action renderer
+    function actionRenderer(params) {
+      const div = document.createElement('div');
+      div.style.display = 'flex';
+      div.style.gap = '5px';
+      div.style.justifyContent = 'center';
+      
+      const pdfBtn = document.createElement('button');
+      pdfBtn.textContent = 'PDF';
+      pdfBtn.className = 'action-btn btn-secondary';
+      pdfBtn.onclick = () => params.onPdfClick(params.data.id);
+      
+      const loadBtn = document.createElement('button');
+      loadBtn.textContent = 'Load';
+      loadBtn.className = 'action-btn btn-outline';
+      loadBtn.onclick = () => params.onLoadClick(params.data.id);
+      
+      div.appendChild(pdfBtn);
+      div.appendChild(loadBtn);
+      
+      return div;
+    }
+
+    // Handle PDF export
+    function handlePdfExport(id) {
+      if (id) {
+        window.open(`http://localhost:8000/requirement/${id}/export/pdf`, '_blank');
+      } else {
+        showToast("No submission to export", "warning");
+      }
+    }
+
+    // Load history data
+    async function loadHistory() {
+      document.getElementById("form-section").classList.add("hidden");
+      document.getElementById("history-section").classList.remove("hidden");
+
+      try {
+        const gridDiv = document.querySelector('#historyGrid');
+        gridDiv.innerHTML = '';
+        
+        const res = await fetch("http://localhost:8000/requirement/list/");
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("API Error:", res.status, errorText);
+          throw new Error(`API Error: ${res.status} ${errorText}`);
+        }
+        
+        const data = await res.json();
+        console.log("API Response:", data);
+        
+        if (data.length === 0) {
+          gridDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--gray-dark);">No submission history found</div>';
+          return;
+        }
+        
+        const formattedData = data.map(item => ({
+          ...item,
+          created_at: new Date(item.created_at || Date.now())
+        }));
+        
+        initGrid(formattedData);
+      } catch (error) {
+        console.error("Full error loading history:", error);
+        const gridDiv = document.querySelector('#historyGrid');
+        gridDiv.innerHTML = `
+          <div style="padding: 20px; text-align: center; color: var(--danger-color);">
+            Error loading history: ${error.message}<br>
+            Please check console for details.
+          </div>
+        `;
+      }
+    }
+
+    async function loadEntry(id) {
+      try {
+        const res = await fetch(`http://localhost:8000/requirement/${id}`);
+        const data = await res.json();
+        
+        document.getElementById("customer_name").value = data.customer_name || "";
+        document.getElementById("project_name").value = data.project_name || "";
+        document.getElementById("location").value = data.location || "";
+        document.getElementById("assigned_person").value = data.assigned_person || "";
+        document.getElementById("cameraBody").innerHTML = "";
+        
+        if (data.camera_configs && data.camera_configs.length > 0) {
+          data.camera_configs.forEach(cam => addRow(cam));
+        } else {
+          addRow();
+        }
+        
+        latestID = data.id;
+        showCreateForm();
+        showToast("Entry loaded successfully", "success");
+      } catch (error) {
+        console.error("Error loading entry:", error);
+        showToast("Error loading entry", "error");
+      }
+    }
+
+    function downloadJSON() {
+      const data = {
+        customer_name: document.getElementById("customer_name").value,
+        project_name: document.getElementById("project_name").value,
+        location: document.getElementById("location").value,
+        assigned_person: document.getElementById("assigned_person").value,
+        camera_configs: getCameraData()
+      };
+      
+      if (!data.customer_name || !data.project_name) {
+        showToast("Please fill in customer and project details", "warning");
+        return;
+      }
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `redx_requirement_${data.customer_name.replace(/\s+/g, '_')}_${Date.now()}.json`;
+      link.click();
+      
+      showToast("JSON exported successfully", "success");
+    }
+
+    // Utility Functions
+    function showToast(message, type = "info") {
+      const toast = document.createElement("div");
+      toast.style.position = "fixed";
+      toast.style.bottom = "20px";
+      toast.style.right = "20px";
+      toast.style.padding = "12px 20px";
+      toast.style.borderRadius = "4px";
+      toast.style.color = "white";
+      toast.style.fontWeight = "500";
+      toast.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+      toast.style.zIndex = "1000";
+      toast.style.transition = "all 0.3s ease";
+      toast.style.transform = "translateY(20px)";
+      toast.style.opacity = "0";
+      
+      switch(type) {
+        case "success":
+          toast.style.backgroundColor = "var(--success-color)";
+          break;
+        case "error":
+          toast.style.backgroundColor = "var(--danger-color)";
+          break;
+        case "warning":
+          toast.style.backgroundColor = "var(--warning-color)";
+          toast.style.color = "var(--dark-color)";
+          break;
+        default:
+          toast.style.backgroundColor = "var(--secondary-color)";
+      }
+      
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.transform = "translateY(0)";
+        toast.style.opacity = "1";
+      }, 10);
+      
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 3000);
+    }
+
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .spin {
+        animation: spin 1s linear infinite;
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

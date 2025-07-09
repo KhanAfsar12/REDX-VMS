@@ -1,0 +1,9 @@
+Storage cctv(GB) = Bitrate(Kbps) * 1000/8 * 3600 * 24 * No.of camera * No.of days * 1/1000 * 1/1000 * 1/1000
+
+Bitrate (Mbps) = (Resolution Factor) × (FPS) × (Compression Factor)
+Storage per day (GB) = (Bitrate × 3600 × Hours) / (8 × 1024)
+
+
+NIC = Bitrate per camera * Number of cameras * Overhead                              Network overhead (typically 20%–30%)
+Example:
+    NIC = 4 * 16 * 1.3

@@ -51,28 +51,37 @@ def calculate_cpu(total_cameras, total_bitrate_mbps, camera_configs:List):
     if total_cameras <= 16:
         if complexity < 1.5:
             return "4-core"
-        return "6-core"
-    
-    elif 16 < total_cameras <= 32:
-        if total_bitrate_mbps < 200:
+        else:
             return "6-core"
-        return "8-core"
-    
-    elif 32 < total_cameras <= 64:
-        if '8MP' in max_res or complexity > 2:
-            return "12-core"
-        return "8-core"
-    
-    elif 64 < total_cameras <= 128:
-        if '12MP' in max_res or total_bitrate_mbps > 600:
-            return "16-core"
-        return "12-core"
-    
-    else:
-        if total_bitrate_mbps > 800:
-            return "24-core each"
-        return "18-core"
 
+    else:
+        if total_cameras <= 32:
+            if total_bitrate_mbps < 200:
+                return "6-core"
+            else:
+                return "8-core"
+
+        else:
+            if total_cameras <= 64:
+                if '8MP' in max_res or complexity > 2:
+                    return "12-core"
+                else:
+                    return "8-core"
+
+            else:
+                if total_cameras <= 128:
+                    if '12MP' in max_res or total_bitrate_mbps > 600:
+                        return "16-core"
+                    else:
+                        if '5MP' in max_res or total_bitrate_mbps > 600:
+                            return "16-core"
+                        else:
+                            return "12-core"
+                else:
+                    if total_bitrate_mbps > 800:
+                        return "24-core each"
+                    else:
+                        return "18-core"
 
 
 # def calculate_raid5_server(storage_tb_needed: float, bandwidth: float, camera_qty: int) -> float:

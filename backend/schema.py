@@ -27,3 +27,19 @@ class RequirementResponse(RequirementRequest):
     bandwidth: float
     storage_tb: float
     server_spec: dict
+
+
+
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    email: str
+    full_name: Optional[str] = None
+    role: str = "user"
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+    

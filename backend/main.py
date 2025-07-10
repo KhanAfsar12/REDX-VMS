@@ -1,17 +1,20 @@
-from fastapi import FastAPI, HTTPException, Query, Request, status
+from typing import Optional
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi_jwt_auth import AuthJWT
 from datetime import datetime
 from uuid import uuid4
+from pydantic import BaseModel
 from pymongo import MongoClient
 from openpyxl import Workbook
 from weasyprint import HTML
 from jinja2 import Environment, FileSystemLoader
 import os
-
-from schema import RequirementRequest, RequirementResponse
-from utils import build_search_filter, calculate_storage, estimate_bitrate, recommend_server, update_bitrate
+import socket
+from schema import RequirementRequest, RequirementResponse, UserCreate, UserLogin
+from utils import Settings, build_search_filter, calculate_storage, estimate_bitrate, get_password_hash, recommend_server, update_bitrate, verify_password
 
 
 app = FastAPI()
@@ -27,6 +30,7 @@ app.add_middleware(
 client = MongoClient("mongodb://192.168.1.67:27017")
 db = client["redx_vms"]
 collection = db["requirements"]
+users_collection = db["users"]
 EXPORT_DIR = "exports"
 TEMPLATE_DIR = "templates"
 os.makedirs(EXPORT_DIR, exist_ok=True)
@@ -35,10 +39,127 @@ env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
 templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
 
+class User(BaseModel):
+    username: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    disabled : Optional[bool] = False
+    role : str = 'user'
+
+class UserInDB(User):
+    hashed_password : str
+
+class Token(BaseModel):
+    access_token : str
+    token_type : str
+
+class TokenData(BaseModel):
+    username : Optional[str] = None
+    role : Optional[str] = None
+
+
+
+def create_superadmin():
+    superadmin = users_collection.find_one({"username": "superadmin"})
+    if not superadmin:
+        hashed_password = get_password_hash("12345678")
+        users_collection.insert_one({
+            "username": "superadmin",
+            "hashed_password": hashed_password,
+            "email": "superadmin@gmail.com",
+            "full_name": "Super Admin",
+            "disabled": False,
+            "role": "superadmin"
+        })
+create_superadmin()
+
+hostname = socket.gethostname()
+local_ip = socket.gethostbyname(hostname)
+
+
+@AuthJWT.load_config
+def get_config():
+    return Settings()
+
+async def get_current_user(Authorize: AuthJWT=Depends()):
+    try:
+        Authorize.jwt_required()
+        username = Authorize.get_jwt_subject()
+        user_data = Authorize.get_raw_jwt()
+        role = user_data.get('role', "user")
+
+        user = users_collection.find_one({"username": username})
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        return  UserInDB(**user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Token, Login again"
+        )
+    
+async def get_superadmin(current_user:  UserInDB = Depends(get_current_user)):
+    if current_user.role != "superadmin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Super Admin Privileges required')
+    return current_user
+
+
+@app.get('/register', response_class=HTMLResponse)
+def register(request: Request):
+    context = {
+        'request': request,
+        "local_ip": local_ip
+    }
+    return templates.TemplateResponse("register.html", context)
+
+@app.post('/register', response_model=User)
+async def register(user: UserCreate):
+    existing_user = users_collection.find_one({"username": user.username})
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='username already registered')
+    hashed_password = get_password_hash(user.password)
+    user_dict = user.dict()
+    user_dict['hashed_password'] = hashed_password
+    del user_dict['password']
+    users_collection.insert_one(user_dict)
+    return user_dict
+
+
+@app.post('/login')
+async def login(user_data: UserLogin, Authorize: AuthJWT = Depends()):
+    user = users_collection.find_one({"username": user_data.username})
+    if not user or not verify_password(user_data.password, user['hashed_password']):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username or password')
+    
+    access_token = Authorize.create_access_token(
+        subject=user["username"],
+        user_claims={"role": user["role"]}
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post('/logout')
+def logout():
+    return {"message": "Successfully logged out (client should delete token)"}
+
+
+@app.get('/protected')
+async def protected_route(current_user: User = Depends(get_current_user)):
+    return {"message": f"Hello {current_user.username}", "role": f"Your role is {current_user.role}"}
+
+@app.get('/admin-only')
+async def admin_route(superadmin: User = Depends(get_superadmin)):
+    return {"Message": "Welcome Super Admin!"}
+
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse("index1.html", {"request": request})
+def home(request: Request, current_user: User = Depends(get_current_user)):
+
+    print("local_ip:", local_ip)
+    context = {
+        "request": request,
+        "local_ip": local_ip
+    }
+    return templates.TemplateResponse("index1.html", context)
 
 
 @app.post("/requirement", response_model=RequirementResponse)
@@ -373,4 +494,4 @@ def export_filtered_excel(
 if __name__ == "__main__":
     
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

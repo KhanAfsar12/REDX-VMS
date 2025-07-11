@@ -1070,10 +1070,14 @@
           </svg>
           Processing...
         `;
-
+        const token = localStorage.getItem('authToken');
+        if(!token) return;
         const res = await fetch(`${customHost}:8000/requirement/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
           body: JSON.stringify(payload)
         });
 
@@ -1258,13 +1262,45 @@
       return div;
     }
 
-    function handlePdfExport(id) {
-      if (id) {
-        window.open(`${customHost}:8000/requirement/${id}/export/pdf`, '_blank');
-      } else {
-        showToast("No submission to export", "warning");
-      }
-    }
+function handlePdfExport(id) {
+  // Get token from localStorage
+  const token = localStorage.getItem('authToken');
+  
+  if (!token) {
+    showToast("Please login first", "error");
+    return;
+  }
+
+  // Encode the token for URL safety
+  const encodedToken = encodeURIComponent(token);
+  
+  // Construct the URL with token parameter
+  const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf?token=${encodedToken}`;
+  
+  // Open in new tab
+  const newWindow = window.open(pdfUrl, '_blank');
+  
+  // Fallback if popup is blocked
+  if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+    showToast("Popup blocked. Please allow popups for this site.", "warning");
+    
+    // Alternative download method
+    const link = document.createElement('a');
+    link.href = pdfUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
+// Update your PDF button event listener
+document.getElementById("pdfBtn").addEventListener("click", function() {
+  if (latestID) {
+    handlePdfExport(latestID);
+  } else {
+    showToast("No submission to export", "warning");
+  }
+});
 
     async function exportAllData() {
       try {

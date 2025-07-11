@@ -83,11 +83,19 @@ def get_config():
 
 async def get_current_user(Authorize: AuthJWT=Depends()):
     try:
+        print("=== Checking JWT ===")
+        Authorize.jwt_required()
+        username = Authorize.get_jwt_subject()
+        print("JWT Subject Username:", username)
+
+        raw_jwt = Authorize.get_raw_jwt()
+        print("Raw JWT:", raw_jwt)
+        print("[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]")
         Authorize.jwt_required()
         username = Authorize.get_jwt_subject()
         user_data = Authorize.get_raw_jwt()
         role = user_data.get('role', "user")
-
+        print(username)
         user = users_collection.find_one({"username": username})
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
@@ -152,7 +160,7 @@ async def admin_route(superadmin: User = Depends(get_superadmin)):
 
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request, current_user: User = Depends(get_current_user)):
+def home(request: Request):
 
     print("local_ip:", local_ip)
     context = {
@@ -163,7 +171,7 @@ def home(request: Request, current_user: User = Depends(get_current_user)):
 
 
 @app.post("/requirement", response_model=RequirementResponse)
-def create_requirement(req: RequirementRequest):
+def create_requirement(req: RequirementRequest, current_user: User = Depends(get_current_user)):
     try:
         update_bitrate(req)
 
@@ -243,25 +251,59 @@ def export_excel(id: str):
 
 
 @app.get("/requirement/{id}/export/pdf")
-def export_pdf(id: str):
-    doc = collection.find_one({"_id": id})
+async def export_pdf(
+    id: str,
+    token: str = Query(..., description="JWT token for authentication"),  # Required parameter
+    Authorize: AuthJWT = Depends()
+):
+    try:
+        # Verify the token from query parameter
+        Authorize.jwt_required("access", token=token)
+        
+        current_user = Authorize.get_jwt_subject()
+        print(f"PDF export requested by: {current_user}")
+        jwt_claims = Authorize.get_raw_jwt()
+        print(f"JWT Claims: {jwt_claims}")
+        # Get the requirement data
+        doc = collection.find_one({"_id": id})
+        if not doc:
+            raise HTTPException(status_code=404, detail="Requirement not found")
 
-    if not doc:
-        raise HTTPException(status_code=404, detail="Requirement not found")
-    
-    for cam in doc.get("camera_configs"):
-        quantity = cam.get('qty')
-        bitrate_kbps = cam.get('bitrate_kbps')
-        cam["bandwidth"] = round(bitrate_kbps * quantity / 1024, 2)
-    print(type(doc), doc)
+        # Calculate bandwidth for each camera
+        for cam in doc.get("camera_configs", []):
+            quantity = cam.get('qty', 1)
+            bitrate_kbps = cam.get('bitrate_kbps', 0)
+            cam["bandwidth"] = round(bitrate_kbps * quantity / 1024, 2)
 
-    template = env.get_template("report_template.html")
-    html_out = template.render(data=doc, created=datetime.now().strftime("%d-%b-%Y"))
+        # Render PDF
+        template = env.get_template("report_template.html")
+        html_out = template.render(
+            data=doc,
+            created=datetime.now().strftime("%d-%b-%Y"),
+            user=current_user
+        )
 
-    pdf_path = os.path.join(EXPORT_DIR, f"requirement_{id}.pdf")
-    HTML(string=html_out).write_pdf(pdf_path)
-    return FileResponse(pdf_path, filename=f"redx_report_{id}.pdf")
+        # Ensure exports directory exists
+        os.makedirs(EXPORT_DIR, exist_ok=True)
+        pdf_path = os.path.join(EXPORT_DIR, f"requirement_{id}.pdf")
+        
+        # Generate PDF
+        HTML(string=html_out).write_pdf(pdf_path)
+        
+        # Return the PDF file
+        return FileResponse(
+            pdf_path,
+            filename=f"redx_report_{id}.pdf",
+            media_type='application/pdf'
+        )
 
+    except Exception as e:
+        print(f"PDF export error: {str(e)}")
+        error_detail = "Invalid or expired token" if "token" in str(e).lower() else str(e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"PDF export failed: {error_detail}"
+        )
 
 @app.get("/requirement/list/")
 def list_all_requirements():

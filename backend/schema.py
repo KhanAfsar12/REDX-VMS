@@ -29,15 +29,12 @@ class RequirementResponse(RequirementRequest):
     server_spec: dict
 
 
-
-
 class UserCreate(BaseModel):
     username: str
     password: str
     email: str
     full_name: Optional[str] = None
     role: str = "user"
-
 
 class UserLogin(BaseModel):
     username: str

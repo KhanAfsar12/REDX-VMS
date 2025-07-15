@@ -1,17 +1,20 @@
-from fastapi import FastAPI, HTTPException, Query, Request, status
+from typing import Optional
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi_jwt_auth import AuthJWT
 from datetime import datetime
 from uuid import uuid4
+from pydantic import BaseModel
 from pymongo import MongoClient
 from openpyxl import Workbook
 from weasyprint import HTML
 from jinja2 import Environment, FileSystemLoader
 import os
-
-from schema import RequirementRequest, RequirementResponse
-from utils import build_search_filter, calculate_storage, estimate_bitrate, recommend_server, update_bitrate
+import socket
+from schema import RequirementRequest, RequirementResponse, UserCreate, UserLogin
+from utils import Settings, build_search_filter, calculate_storage, estimate_bitrate, get_password_hash, recommend_server, update_bitrate, verify_password
 
 
 app = FastAPI()
@@ -27,6 +30,7 @@ app.add_middleware(
 client = MongoClient("mongodb://192.168.1.67:27017")
 db = client["redx_vms"]
 collection = db["requirements"]
+users_collection = db["users"]
 EXPORT_DIR = "exports"
 TEMPLATE_DIR = "templates"
 os.makedirs(EXPORT_DIR, exist_ok=True)
@@ -35,14 +39,139 @@ env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
 templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
 
+class User(BaseModel):
+    username: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    disabled : Optional[bool] = False
+    role : str = 'user'
+
+class UserInDB(User):
+    hashed_password : str
+
+class Token(BaseModel):
+    access_token : str
+    token_type : str
+
+class TokenData(BaseModel):
+    username : Optional[str] = None
+    role : Optional[str] = None
+
+
+
+def create_superadmin():
+    superadmin = users_collection.find_one({"username": "superadmin"})
+    if not superadmin:
+        hashed_password = get_password_hash("12345678")
+        users_collection.insert_one({
+            "username": "superadmin",
+            "hashed_password": hashed_password,
+            "email": "superadmin@gmail.com",
+            "full_name": "Super Admin",
+            "disabled": False,
+            "role": "superadmin"
+        })
+create_superadmin()
+
+hostname = socket.gethostname()
+local_ip = socket.gethostbyname(hostname)
+
+
+@AuthJWT.load_config
+def get_config():
+    return Settings()
+
+async def get_current_user(Authorize: AuthJWT=Depends()):
+    try:
+        print("=== Checking JWT ===")
+        Authorize.jwt_required()
+        username = Authorize.get_jwt_subject()
+        print("JWT Subject Username:", username)
+
+        raw_jwt = Authorize.get_raw_jwt()
+        print("Raw JWT:", raw_jwt)
+        print("[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]")
+        Authorize.jwt_required()
+        username = Authorize.get_jwt_subject()
+        user_data = Authorize.get_raw_jwt()
+        role = user_data.get('role', "user")
+        print(username)
+        user = users_collection.find_one({"username": username})
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        return  UserInDB(**user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Token, Login again"
+        )
+    
+async def get_superadmin(current_user:  UserInDB = Depends(get_current_user)):
+    if current_user.role != "superadmin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Super Admin Privileges required')
+    return current_user
+
+
+@app.get('/register', response_class=HTMLResponse)
+def register(request: Request):
+    context = {
+        'request': request,
+        "local_ip": local_ip
+    }
+    return templates.TemplateResponse("register.html", context)
+
+@app.post('/register', response_model=User)
+async def register(user: UserCreate):
+    existing_user = users_collection.find_one({"username": user.username})
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='username already registered')
+    hashed_password = get_password_hash(user.password)
+    user_dict = user.dict()
+    user_dict['hashed_password'] = hashed_password
+    del user_dict['password']
+    users_collection.insert_one(user_dict)
+    return user_dict
+
+
+@app.post('/login')
+async def login(user_data: UserLogin, Authorize: AuthJWT = Depends()):
+    user = users_collection.find_one({"username": user_data.username})
+    if not user or not verify_password(user_data.password, user['hashed_password']):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username or password')
+    
+    access_token = Authorize.create_access_token(
+        subject=user["username"],
+        user_claims={"role": user["role"]}
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post('/logout')
+def logout():
+    return {"message": "Successfully logged out (client should delete token)"}
+
+
+@app.get('/protected')
+async def protected_route(current_user: User = Depends(get_current_user)):
+    return {"message": f"Hello {current_user.username}", "role": f"Your role is {current_user.role}"}
+
+@app.get('/admin-only')
+async def admin_route(superadmin: User = Depends(get_superadmin)):
+    return {"Message": "Welcome Super Admin!"}
+
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index1.html", {"request": request})
+
+    print("local_ip:", local_ip)
+    context = {
+        "request": request,
+        "local_ip": local_ip
+    }
+    return templates.TemplateResponse("index1.html", context)
 
 
 @app.post("/requirement", response_model=RequirementResponse)
-def create_requirement(req: RequirementRequest):
+def create_requirement(req: RequirementRequest, current_user: User = Depends(get_current_user)):
     try:
         update_bitrate(req)
 
@@ -122,28 +251,62 @@ def export_excel(id: str):
 
 
 @app.get("/requirement/{id}/export/pdf")
-def export_pdf(id: str):
-    doc = collection.find_one({"_id": id})
+async def export_pdf(
+    id: str,
+    token: str = Query(..., description="JWT token for authentication"),  # Required parameter
+    Authorize: AuthJWT = Depends()
+):
+    try:
+        # Verify the token from query parameter
+        Authorize.jwt_required("access", token=token)
+        
+        current_user = Authorize.get_jwt_subject()
+        print(f"PDF export requested by: {current_user}")
+        jwt_claims = Authorize.get_raw_jwt()
+        print(f"JWT Claims: {jwt_claims}")
+        # Get the requirement data
+        doc = collection.find_one({"_id": id})
+        if not doc:
+            raise HTTPException(status_code=404, detail="Requirement not found")
 
-    if not doc:
-        raise HTTPException(status_code=404, detail="Requirement not found")
-    
-    for cam in doc.get("camera_configs"):
-        quantity = cam.get('qty')
-        bitrate_kbps = cam.get('bitrate_kbps')
-        cam["bandwidth"] = round(bitrate_kbps * quantity / 1024, 2)
-    print(type(doc), doc)
+        # Calculate bandwidth for each camera
+        for cam in doc.get("camera_configs", []):
+            quantity = cam.get('qty', 1)
+            bitrate_kbps = cam.get('bitrate_kbps', 0)
+            cam["bandwidth"] = round(bitrate_kbps * quantity / 1024, 2)
 
-    template = env.get_template("report_template.html")
-    html_out = template.render(data=doc, created=datetime.now().strftime("%d-%b-%Y"))
+        # Render PDF
+        template = env.get_template("report_template.html")
+        html_out = template.render(
+            data=doc,
+            created=datetime.now().strftime("%d-%b-%Y"),
+            user=current_user
+        )
 
-    pdf_path = os.path.join(EXPORT_DIR, f"requirement_{id}.pdf")
-    HTML(string=html_out).write_pdf(pdf_path)
-    return FileResponse(pdf_path, filename=f"redx_report_{id}.pdf")
+        # Ensure exports directory exists
+        os.makedirs(EXPORT_DIR, exist_ok=True)
+        pdf_path = os.path.join(EXPORT_DIR, f"requirement_{id}.pdf")
+        
+        # Generate PDF
+        HTML(string=html_out).write_pdf(pdf_path)
+        
+        # Return the PDF file
+        return FileResponse(
+            pdf_path,
+            filename=f"redx_report_{id}.pdf",
+            media_type='application/pdf'
+        )
 
+    except Exception as e:
+        print(f"PDF export error: {str(e)}")
+        error_detail = "Invalid or expired token" if "token" in str(e).lower() else str(e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"PDF export failed: {error_detail}"
+        )
 
 @app.get("/requirement/list/")
-def list_all_requirements():
+def list_all_requirements(current_user: User = Depends(get_current_user)):
     results = []
     for doc in collection.find().sort("created_at", -1):
         total_qty = sum(cam.get("qty", 1) for cam in doc.get('camera_configs', []))
@@ -162,43 +325,51 @@ def list_all_requirements():
 
 
 @app.get("/requirement/export/all/xlsx")
-def export_all_excel():
-    docs = list(collection.find())
-    if not docs:
-        raise HTTPException(status_code=404, detail="No requirements found")
+def export_all_excel(token: str = Query(..., description="JWT token for authentication"), Authorize: AuthJWT = Depends()):
+    try:
+        # Verify the token
+        Authorize.jwt_required("access", token=token)
+        current_user = Authorize.get_jwt_subject()
+        
+        docs = list(collection.find())
+        if not docs:
+            raise HTTPException(status_code=404, detail="No requirements found")
 
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "All REDX Requirements"
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "All REDX Requirements"
 
-    ws.append([
-        "Customer", "Project", "Location", "Assigned", "Bitrate (Mbps)",
-        "Storage (TB)", "Camera Brand", "Resolution", "FPS", "Codec",
-        "Record Hour", "Retention Days", "Qty"
-    ])
+        ws.append([
+            "Customer", "Project", "Location", "Assigned", "Bitrate (Mbps)",
+            "Storage (TB)", "Camera Brand", "Resolution", "FPS", "Codec",
+            "Record Hour", "Retention Days", "Qty"
+        ])
 
-    for doc in docs:
-        for cam in doc["camera_configs"]:
-            ws.append([
-                doc["customer_name"],
-                doc["project_name"],
-                doc["location"],
-                doc["assigned_person"],
-                doc["bandwidth"],
-                doc["storage_tb"],
-                cam["name"],
-                cam["resolution"],
-                cam["fps"],
-                cam["codec"],
-                cam["record_hour"],
-                cam["retention_days"],
-                cam["qty"]
-            ])
+        for doc in docs:
+            for cam in doc["camera_configs"]:
+                ws.append([
+                    doc["customer_name"],
+                    doc["project_name"],
+                    doc["location"],
+                    doc["assigned_person"],
+                    doc["bandwidth"],
+                    doc["storage_tb"],
+                    cam["name"],
+                    cam["resolution"],
+                    cam["fps"],
+                    cam["codec"],
+                    cam["record_hour"],
+                    cam["retention_days"],
+                    cam["qty"]
+                ])
 
-    path = os.path.join(EXPORT_DIR, f"all_requirements.xlsx")
-    wb.save(path)
-    return FileResponse(path, filename=f"redx_all_requirements.xlsx")
-
+        path = os.path.join(EXPORT_DIR, f"all_requirements.xlsx")
+        wb.save(path)
+        return FileResponse(path, filename=f"redx_all_requirements.xlsx", headers={"Content-Dispostion": f"attachment; filename=redx_all_requirements.xlsx"})
+    except Exception as e:
+        raise  HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized access'
+        )
 
 
 @app.get("/requirement/search/")
@@ -247,130 +418,102 @@ def export_filtered_excel(
     location: str = Query(None, description="Filter by location"),
     assigned_person: str = Query(None, description="Filter by assigned person"),
     start_date: datetime = Query(None, description="Start date for created_at filter"),
-    end_date: datetime = Query(None, description="End date for created_at filter")
+    end_date: datetime = Query(None, description="End date for created_at filter"),
+    token: str = Query(..., description="JWT token for authentication"),
+    Authorize: AuthJWT = Depends()
 ):
-    search_filter = build_search_filter(
-        query=query,
-        customer_name=customer_name,
-        project_name=project_name,
-        location=location,
-        assigned_person=assigned_person,
-        start_date=start_date,
-        end_date=end_date
-    )
-
-    docs = list(collection.find(search_filter).sort("created_at", -1))
-    if not docs:
-        raise HTTPException(status_code=404, detail="No requirements found matching the filters")
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Filtered REDX Requirements"
-
-    ws.append(["Export Date", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
-    if query:
-        ws.append(["Search Query", query])
-    if customer_name:
-        ws.append(["Customer Filter", customer_name])
-    if project_name:
-        ws.append(["Project Filter", project_name])
-    if location:
-        ws.append(["Location Filter", location])
-    if assigned_person:
-        ws.append(["Assigned Person Filter", assigned_person])
-    if start_date or end_date:
-        date_range = []
-        if start_date:
-            date_range.append(f"From: {start_date}")
-        if end_date:
-            date_range.append(f"To: {end_date}")
-        ws.append(["Date Range", " ".join(date_range)])
-    ws.append([])
-
-    ws.append([
-        "Customer", "Project", "Location", "Assigned", "Created At",
-        "Camera Brand", "Resolution", "FPS", "Codec", "Record Hour", 
-        "Retention Days", "Qty", "Bitrate (Mbps)", "Storage (TB)"
-    ])
-
-    for doc in docs:
-        for cam in doc.get("camera_configs", []):
-            created_at = doc.get("created_at", "")
-            if isinstance(created_at, datetime):
-                created_at = created_at.strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        # Verify the token
+        Authorize.jwt_required("access", token=token)
+        current_user = Authorize.get_jwt_subject()
             
-            ws.append([
-                doc["customer_name"],
-                doc["project_name"],
-                doc.get("location", ""),
-                doc.get("assigned_person", ""),
-                created_at,
-                cam["name"],
-                cam["resolution"],
-                cam["fps"],
-                cam["codec"],
-                cam["record_hour"],
-                cam["retention_days"],
-                cam["qty"],
-                doc.get("bandwidth", "N/A"),
-                doc.get("storage_tb", "N/A")
-            ])
+        search_filter = build_search_filter(
+            query=query,
+            customer_name=customer_name,
+            project_name=project_name,
+            location=location,
+            assigned_person=assigned_person,
+            start_date=start_date,
+            end_date=end_date
+        )
 
-    filename_parts = ["redx_export"]
-    if customer_name:
-        filename_parts.append(f"cust_{customer_name[:20]}")
-    if project_name:
-        filename_parts.append(f"proj_{project_name[:20]}")
-    if query:
-        filename_parts.append(f"q_{query[:10]}")
-    filename = "_".join(filename_parts) + ".xlsx"
-    path = os.path.join(EXPORT_DIR, filename)    
-    os.makedirs(EXPORT_DIR, exist_ok=True)
-    wb.save(path)
-    
-    return FileResponse(path, filename=filename)
+        docs = list(collection.find(search_filter).sort("created_at", -1))
+        if not docs:
+            raise HTTPException(status_code=404, detail="No requirements found matching the filters")
 
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Filtered REDX Requirements"
 
-# @app.get("/requirement/export/all/xlsx")
-# def export_all_excel():
-#     docs = list(collection.find())
-#     if not docs:
-#         raise HTTPException(status_code=404, detail="No requirements found")
+        ws.append(["Export Date", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+        if query:
+            ws.append(["Search Query", query])
+        if customer_name:
+            ws.append(["Customer Filter", customer_name])
+        if project_name:
+            ws.append(["Project Filter", project_name])
+        if location:
+            ws.append(["Location Filter", location])
+        if assigned_person:
+            ws.append(["Assigned Person Filter", assigned_person])
+        if start_date or end_date:
+            date_range = []
+            if start_date:
+                date_range.append(f"From: {start_date}")
+            if end_date:
+                date_range.append(f"To: {end_date}")
+            ws.append(["Date Range", " ".join(date_range)])
+        ws.append([])
 
-#     wb = Workbook()
-#     ws = wb.active
-#     ws.title = "All REDX Requirements"
+        ws.append([
+            "Customer", "Project", "Location", "Assigned", "Created At",
+            "Camera Brand", "Resolution", "FPS", "Codec", "Record Hour", 
+            "Retention Days", "Qty", "Bitrate (Mbps)", "Storage (TB)"
+        ])
 
-#     ws.append([
-#         "Customer", "Project", "Location", "Assigned", "Bitrate (Mbps)",
-#         "Storage (TB)", "Camera Brand", "Resolution", "FPS", "Codec",
-#         "Record Hour", "Retention Days", "Qty"
-#     ])
+        for doc in docs:
+            for cam in doc.get("camera_configs", []):
+                created_at = doc.get("created_at", "")
+                if isinstance(created_at, datetime):
+                    created_at = created_at.strftime("%Y-%m-%d %H:%M:%S")
+                
+                ws.append([
+                    doc["customer_name"],
+                    doc["project_name"],
+                    doc.get("location", ""),
+                    doc.get("assigned_person", ""),
+                    created_at,
+                    cam["name"],
+                    cam["resolution"],
+                    cam["fps"],
+                    cam["codec"],
+                    cam["record_hour"],
+                    cam["retention_days"],
+                    cam["qty"],
+                    doc.get("bandwidth", "N/A"),
+                    doc.get("storage_tb", "N/A")
+                ])
 
-#     for doc in docs:
-#         for cam in doc["camera_configs"]:
-#             ws.append([
-#                 doc["customer_name"],
-#                 doc["project_name"],
-#                 doc["location"],
-#                 doc["assigned_person"],
-#                 doc["bandwidth"],
-#                 doc["storage_tb"],
-#                 cam["name"],
-#                 cam["resolution"],
-#                 cam["fps"],
-#                 cam["codec"],
-#                 cam["record_hour"],
-#                 cam["retention_days"],
-#                 cam["qty"]
-#             ])
-
-#     path = os.path.join(EXPORT_DIR, f"all_requirements.xlsx")
-#     wb.save(path)
-#     return FileResponse(path, filename=f"redx_all_requirements.xlsx")
+        filename_parts = ["redx_export"]
+        if customer_name:
+            filename_parts.append(f"cust_{customer_name[:20]}")
+        if project_name:
+            filename_parts.append(f"proj_{project_name[:20]}")
+        if query:
+            filename_parts.append(f"q_{query[:10]}")
+        filename = "_".join(filename_parts) + ".xlsx"
+        path = os.path.join(EXPORT_DIR, filename)    
+        os.makedirs(EXPORT_DIR, exist_ok=True)
+        wb.save(path)
+        
+        return FileResponse(path, filename=filename)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Export Failed: {str(e)}"
+        )
 
 
 if __name__ == "__main__":
     
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

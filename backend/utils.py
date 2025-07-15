@@ -1,9 +1,41 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import os
 import re
 import math
-from typing import List
-
+from typing import List, Optional
+from passlib.context import CryptContext
+from pydantic import BaseModel
 from schema import RequirementResponse
+from jose import JWTError, jwt
+
+class Settings(BaseModel):
+    authjwt_secret_key: str = "afsarkhan$$@#656"
+    authjwt_access_token_expires: timedelta = timedelta(minutes=3)
+    authjwt_algorithm: str = "HS256" 
+    authjwt_token_location: list = ['headers']
+    authjwt_query_string_name: str = "token" 
+    authjwt_decode_audience: str = None
+    authjwt_encode_audience: str = None
+
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
+
+def verify_password(plain_password: str, hashed_password: str):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str):
+    return pwd_context.hash(password)
+
+# def create_access_token(data: dict, expires_delta: Optional[timedelta]=None):
+#     to_encode = data.copy()
+#     if expires_delta:
+#         expire = datetime.utcnow() + expires_delta
+#     else:
+#         expire = datetime.utcnow() + timedelta(minutes=15)
+#     to_encode.update({'exp': expire})
+#     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+#     return encoded_jwt
+
+
 
 def estimate_bitrate(resolution: str, fps: int, codec: str) -> float:
 

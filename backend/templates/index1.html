@@ -62,11 +62,16 @@
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.3s ease;
-      margin-left: 1300px;
+      margin-left: auto;
+      margin-bottom: 10px;
     }
 
     .login-btn:hover {
       background-color: #31587a;
+    }
+
+    .login-btn.logout {
+      background-color: var(--danger-color);
     }
 
     /* Modal styles */
@@ -158,7 +163,7 @@
       display: none;
     }
 
-    .register > a{
+    .register>a {
       text-decoration: none;
       color: var(--secondary-color);
     }
@@ -284,6 +289,7 @@
       margin-bottom: 30px;
       border-bottom: 1px solid var(--gray-medium);
       padding-bottom: 15px;
+      flex-wrap: wrap;
     }
 
     .tab-btns button {
@@ -343,6 +349,7 @@
     .summary p {
       margin: 8px 0;
       display: flex;
+      flex-wrap: wrap;
     }
 
     .summary p strong {
@@ -355,6 +362,7 @@
       display: flex;
       gap: 15px;
       margin-top: 25px;
+      flex-wrap: wrap;
     }
 
     .form-group {
@@ -455,11 +463,12 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-wrap: wrap;
     }
 
     .search-container input {
       flex: 1;
-      max-width: 400px;
+      min-width: 200px;
       padding: 8px 12px;
       border: 1px solid var(--gray-medium);
       border-radius: 4px;
@@ -480,8 +489,35 @@
       gap: 10px;
       margin-bottom: 15px;
       justify-content: flex-end;
+      flex-wrap: wrap;
     }
 
+    /* Token expired alert */
+    .token-expired {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: var(--danger-color);
+      color: white;
+      padding: 10px;
+      text-align: center;
+      z-index: 1000;
+      display: none;
+      animation: slideDown 0.5s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%);
+      }
+
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive adjustments */
     @media (max-width: 768px) {
       .container {
         padding: 15px;
@@ -514,11 +550,51 @@
         flex-direction: column;
         align-items: flex-end;
       }
+
+      .form-actions {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .summary p strong {
+        width: 120px;
+      }
+
+      .login-btn {
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      .card {
+        padding: 15px;
+      }
+
+      .summary p strong {
+        width: 100px;
+      }
     }
   </style>
 </head>
 
 <body>
+  <div class="token-expired" id="tokenExpiredAlert">
+    Your session has expired. Please login again.
+  </div>
+
   <div class="container">
     <h1>REDX VMS Requirement Portal</h1>
     <div class="button">
@@ -670,7 +746,7 @@
 
     <div id="history-section" class="hidden">
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" id="exportAllBtn">
           <h2>Submission History</h2>
           <div class="export-actions">
             <button class="btn-outline" onclick="exportAllData()">
@@ -706,9 +782,9 @@
   </div>
 
   <script>
-    const localIP = '{{ local_ip }}'
-    const customHost = `http://${localIP}`
-    console.log(localIP)
+    const localIP = '{{ local_ip }}';
+    const customHost = `http://${localIP}`;
+    console.log(localIP);
 
     const codecOptions = ["H264", "H264+", "H265", "H265+"];
     const resolutionOptions = [
@@ -738,141 +814,163 @@
     let allRowData = [];
     let currentSearchTerm = "";
 
-    document.addEventListener('DOMContentLoaded', function () {
-      checkAuthState();
-      const modal = document.getElementById('loginModal');
-      const openBtn = document.getElementById('openLoginModal');
-      const closeBtn = document.getElementById('closeLoginModal');
-      const loginForm = document.getElementById('loginForm');
-
-      openBtn.addEventListener('click', async function () {
-        if(openBtn.textContent === 'Logout'){
-          try{
-            const token = localStorage.getItem('authToken');
-            if(!token) return;
-
-            const response = await fetch(`${customHost}:8000/logout`, {
-              method : 'POST',
-              headers : {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            });
-            if(!response.ok){
-              throw new Error('Logout Failed');
-            }
-
-            localStorage.removeItem('authToken');
-            openBtn.textContent = 'Login';
-            openBtn.style.backgroundColor = 'var(--secondary-color)';
-            showToast('Logged out Successfully', 'success');
-          }
-          catch(error){
-            console.error('Logout Error', error);
-            showToast(error.message || 'Logout Failed', 'error');
-          }
-        }
-        else{
-          modal.style.display = 'block';
-        }
-        
-      });
-      closeBtn.addEventListener('click', function () {
-        modal.style.display = 'none';
-      });
-      window.addEventListener('click', function (event) {
-        if (event.target === modal) {
-          modal.style.display = 'none';
-        }
-      });
-
-      // Make the event handler async
-      loginForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        document.querySelectorAll('.error-message').forEach(el => {
-          el.style.display = 'none';
-        });
-        let isValid = true;
-        const username = document.getElementById('loginUsername').value;
-        const password = document.getElementById('loginPassword').value;
-
-        if (!username) {
-          document.getElementById('loginUsernameError').style.display = 'block';
-          isValid = false;
-        }
-        if (!password || password.length < 8) {
-          document.getElementById('loginPasswordError').style.display = 'block';
-          isValid = false;
-        }
-
-        if (!isValid) return;
-
-        try {
-          const submitBtn = loginForm.querySelector('button[type="submit"]');
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = "Logging in...";
-
-          const response = await fetch(`${customHost}:8000/login`, {
-            method: 'POST',
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username: username, password: password })
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Login Failed');
-          }
-          const data = await response.json();
-
-          if (data.access_token) {
-            localStorage.setItem('authToken', data.access_token);
-            document.getElementById('loginSuccessMessage').style.display = 'block';
-            setTimeout(() => {
-              modal.style.display = 'none';
-              openBtn.textContent = 'Logout';
-              openBtn.style.backgroundColor = 'var(--danger-color)';
-              showToast('Login Successful', 'success');
-            }, 1500);
-          }
-        }
-        catch (error) {
-          console.error('Login error:', error);
-          showToast(error.message || 'Login failed', 'error');
-        }
-        finally {
-          const submitBtn = loginForm.querySelector('button[type="submit"]');
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Login';
-          }
-        }
-      });
-
-      function checkAuthState() {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          const openBtn = document.getElementById('openLoginModal');
-          openBtn.textContent = 'Logout';
-          openBtn.style.backgroundColor = 'var(--danger-color)';
-        }
-      }
-
-      addRow();
-      document.getElementById("pdfBtn").addEventListener("click", handlePdfDownload);
-      document.getElementById("searchInput").addEventListener("keyup", function (event) {
-        if (event.key === "Enter") {
-          applySearch();
-        }
-      });
-    });
-
-    function showCreateForm() {
-      document.getElementById("form-section").classList.remove("hidden");
-      document.getElementById("history-section").classList.add("hidden");
+    // Token Management Functions
+    function storeTokenData(tokenData) {
+      localStorage.setItem('authToken', tokenData.access_token);
+      const expiresAt = tokenData.expires_at * 1000;
+      localStorage.setItem('tokenExpiry', expiresAt.toString());
+      const userRole = tokenData.role;
+      localStorage.setItem("userRole", userRole.toString());
+      updateAuthUI();
     }
 
+    function clearAuthData() {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('tokenExpiry');
+      updateAuthUI();
+      showTokenExpiredAlert();
+    }
+
+    function isTokenValid() {
+      const token = localStorage.getItem('authToken');
+      const expiry = localStorage.getItem('tokenExpiry');
+
+      if (!token || !expiry) return false;
+
+      const now = Date.now();
+      return now < parseInt(expiry);
+    }
+
+    function updateAuthUI() {
+      const loginBtn = document.getElementById('openLoginModal');
+      if (loginBtn) {
+        if (isTokenValid()) {
+          loginBtn.textContent = 'Logout';
+          loginBtn.classList.add('logout');
+        } else {
+          loginBtn.textContent = 'Login';
+          loginBtn.classList.remove('logout');
+        }
+      }
+    }
+
+    function showTokenExpiredAlert() {
+      const alert = document.getElementById('tokenExpiredAlert');
+      alert.style.display = 'block';
+      setTimeout(() => {
+        alert.style.display = 'none';
+      }, 5000);
+    }
+
+    // Authenticated Fetch Wrapper
+    async function authFetch(url, options = {}) {
+      if (!isTokenValid()) {
+        clearAuthData();
+        return Promise.reject(new Error('Token expired or invalid'));
+      }
+
+      const token = localStorage.getItem('authToken');
+      const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${token}`
+      };
+
+      try {
+        const response = await fetch(url, { ...options, headers });
+
+        if (response.status === 401) {
+          clearAuthData();
+          return Promise.reject(new Error('Unauthorized'));
+        }
+
+        return response;
+      } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+      }
+    }
+
+    setInterval(() => {
+      if (!isTokenValid()) {
+        clearAuthData();
+      }
+    }, 60000);
+
+    // Login Function
+    async function handleLogin(e) {
+      e.preventDefault();
+      document.querySelectorAll('.error-message').forEach(el => {
+        el.style.display = 'none';
+      });
+
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+      let isValid = true;
+
+      if (!username) {
+        document.getElementById('loginUsernameError').style.display = 'block';
+        isValid = false;
+      }
+      if (!password || password.length < 8) {
+        document.getElementById('loginPasswordError').style.display = 'block';
+        isValid = false;
+      }
+
+      if (!isValid) return;
+
+      const submitBtn = document.querySelector('#loginForm button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "Logging in...";
+
+      try {
+        const response = await fetch(`${customHost}:8000/login`, {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Login Failed');
+        }
+
+        const data = await response.json();
+        storeTokenData(data);
+
+        document.getElementById('loginSuccessMessage').style.display = 'block';
+        setTimeout(() => {
+          document.getElementById('loginModal').style.display = 'none';
+          showToast('Login Successful', 'success');
+        }, 1500);
+      } catch (error) {
+        console.error('Login error:', error);
+        showToast(error.message || 'Login failed', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Login';
+      }
+    }
+
+    // Logout Function
+    async function logout() {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          await authFetch(`${customHost}:8000/logout`, {
+            method: 'POST'
+          });
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+      } finally {
+        clearAuthData();
+        showToast('Logged out successfully', 'success');
+      }
+    }
+
+    // Camera Configuration Functions
     function calculateBitrate(resolution, fps, codec, qualityFactor = 1) {
       const bitrate_map = {
         "12MP (4000x3000)": 12000, "12MP (4000x3072)": 12000,
@@ -888,16 +986,14 @@
         "1.3MP (1280x960)": 1500, "720P (1280x720)": 1000,
         "4CIF (704x576)": 600, "D1 (704x480)": 500,
         "nHD (640x360)": 300, "CIF (352x288)": 200
-      }
-      const codec_factor = { "h264": 1.0, "h265": 0.5, "h264+": 0.8, "h265+": 0.4 }
+      };
+      const codec_factor = { "h264": 1.0, "h265": 0.5, "h264+": 0.8, "h265+": 0.4 };
 
-      const base_bitrate = bitrate_map[resolution.trim()] || 2.5
-      const factor = codec_factor[codec.toLowerCase()] || 1.0
-      const bitrate = base_bitrate * (fps / 15) * factor
-      console.log(bitrate)
+      const base_bitrate = bitrate_map[resolution.trim()] || 2.5;
+      const factor = codec_factor[codec.toLowerCase()] || 1.0;
+      const bitrate = base_bitrate * (fps / 15) * factor;
       return Math.round(bitrate * 100) / 100;
     }
-
 
     function updateBitrate(row) {
       const resolution = row.querySelector("select[data-field='resolution']").value;
@@ -935,50 +1031,50 @@
       });
 
       row.innerHTML = `
-        <td></td>
-        <td>
-          <select data-field='resolution' class='small-input'>
-            ${resolutionOptions.map(opt =>
+    <td></td>
+    <td>
+      <select data-field='resolution' class='small-input'>
+        ${resolutionOptions.map(opt =>
         `<option value="${opt}" ${data.resolution === opt ? 'selected' : ''}>${opt}</option>`
       ).join('')}
-          </select>
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='fps' min="1" max="60" 
-                value='${data.fps || 15}' />
-        </td>
-        <td>
-          <select data-field='codec' class='small-input'>
-            ${codecOptions.map(opt =>
+      </select>
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='fps' min="1" max="60" 
+            value='${data.fps || 15}' />
+    </td>
+    <td>
+      <select data-field='codec' class='small-input'>
+        ${codecOptions.map(opt =>
         `<option value="${opt}" ${data.codec === opt ? 'selected' : ''}>${opt}</option>`
       ).join('')}
-          </select>
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='record_hour' 
-                min="1" max="24" value='${data.record_hour || 1}' />
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='retention_days' min="1" 
-                value='${data.retention_days || 30}' />
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='qty' min="1" 
-                value='${data.qty || 1}' />
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='bitrate_kbps' min="100" 
-                value='${data.bitrate_kbps || ""}' placeholder="Auto" />
-        </td>
-        <td>
-          <button type='button' class="btn-danger" onclick='removeRow(this)'>
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-            </svg>
-          </button>
-        </td>
-      `;
+      </select>
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='record_hour' 
+            min="1" max="24" value='${data.record_hour || 1}' />
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='retention_days' min="1" 
+            value='${data.retention_days || 30}' />
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='qty' min="1" 
+            value='${data.qty || 1}' />
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='bitrate_kbps' min="100" 
+            value='${data.bitrate_kbps || ""}' placeholder="Auto" />
+    </td>
+    <td>
+      <button type='button' class="btn-danger" onclick='removeRow(this)'>
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+          <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+        </svg>
+      </button>
+    </td>
+  `;
 
       row.children[0].appendChild(brandSelect);
       tbody.appendChild(row);
@@ -1032,6 +1128,7 @@
       });
     }
 
+    // Form Submission
     async function handleFormSubmit(e) {
       e.preventDefault();
 
@@ -1045,7 +1142,6 @@
         return;
       }
 
-
       const cameraConfigs = getCameraData();
       if (cameraConfigs.length === 0) {
         showToast("Please add at least one camera configuration", "error");
@@ -1055,86 +1151,84 @@
       const payload = {
         customer_name: customerName,
         project_name: projectName,
-        location: document.getElementById("location").value,
-        assigned_person: document.getElementById("assigned_person").value,
+        location: location,
+        assigned_person: assignedPerson,
         camera_configs: cameraConfigs,
       };
 
+      const submitBtn = document.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="spin">
+      <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+      <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+    </svg>
+    Processing...
+  `;
+
       try {
-        const submitBtn = document.querySelector("button[type='submit']");
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="spin">
-            <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
-            <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
-          </svg>
-          Processing...
-        `;
-        const token = localStorage.getItem('authToken');
-        if(!token) return;
-        const res = await fetch(`${customHost}:8000/requirement/`, {
+        const response = await authFetch(`${customHost}:8000/requirement/`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            "Content-Type": "application/json"
           },
           body: JSON.stringify(payload)
         });
 
-        if (!res.ok) {
-          const error = await res.json();
+        if (!response.ok) {
+          const error = await response.json();
           throw new Error(error.detail || "Server error");
         }
 
-        const data = await res.json();
+        const data = await response.json();
         latestID = data.id;
-
-        const formatServerSpec = (spec) => {
-          if (!spec) return "N/A";
-          return `
-            CPU: ${spec.cpu || 'N/A'},
-            RAM: ${spec.ram_gb || 'N/A'} GB,
-            HDD-(OS): ${spec.hdd_tb || 'N/A'} TB,
-            NIC: ${spec.nic || 'N/A'},
-          `.replace(/\s+/g, ' ').trim();
-        };
-
-        const summary = document.getElementById("summary");
-        summary.classList.remove("hidden");
-
-        document.getElementById("summary-content").innerHTML = `
-          <p><strong>Customer:</strong> ${data.customer_name}</p>
-          <p><strong>Project:</strong> ${data.project_name}</p>
-          <p><strong>Location:</strong> ${data.location || "-"}</p>
-          <p><strong>Assigned To:</strong> ${data.assigned_person || "-"}</p>
-          <p><strong>Total Cameras:</strong> ${data.camera_configs.reduce((a, c) => a + (c.qty || 1), 0)}</p>
-          <p><strong>Total Bandwidth:</strong> ${data.bandwidth || "N/A"} Mbps</p>
-          <p><strong>Total Recording Storage:</strong> ${data.storage_tb || "N/A"} TB</p>
-          <p><strong>Submission ID:</strong> ${data.id}</p>
-          <p><strong>Server:</strong> ${formatServerSpec(data.server_spec)}</p>
-          <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-        `;
-
-        document.getElementById("pdfBtn").style.display = "inline-block";
+        showSummary(data);
         showToast("Requirement submitted successfully", "success");
       } catch (error) {
         console.error("Error submitting form:", error);
         showToast(error.message || "Error submitting requirement", "error");
       } finally {
-        const submitBtn = document.querySelector("button[type='submit']");
         submitBtn.disabled = false;
         submitBtn.innerHTML = `Submit Requirement`;
       }
     }
 
+    function showSummary(data) {
+      const formatServerSpec = (spec) => {
+        if (!spec) return "N/A";
+        return `
+      CPU: ${spec.cpu || 'N/A'},
+      RAM: ${spec.ram_gb || 'N/A'} GB,
+      HDD-(OS): ${spec.hdd_tb || 'N/A'} TB,
+      NIC: ${spec.nic || 'N/A'},
+    `.replace(/\s+/g, ' ').trim();
+      };
+
+      const summary = document.getElementById("summary");
+      summary.classList.remove("hidden");
+
+      document.getElementById("summary-content").innerHTML = `
+    <p><strong>Customer:</strong> ${data.customer_name}</p>
+    <p><strong>Project:</strong> ${data.project_name}</p>
+    <p><strong>Location:</strong> ${data.location || "-"}</p>
+    <p><strong>Assigned To:</strong> ${data.assigned_person || "-"}</p>
+    <p><strong>Total Cameras:</strong> ${data.camera_configs.reduce((a, c) => a + (c.qty || 1), 0)}</p>
+    <p><strong>Total Bandwidth:</strong> ${data.bandwidth || "N/A"} Mbps</p>
+    <p><strong>Total Recording Storage:</strong> ${data.storage_tb || "N/A"} TB</p>
+    <p><strong>Submission ID:</strong> ${data.id}</p>
+    <p><strong>Server:</strong> ${formatServerSpec(data.server_spec)}</p>
+    <p><strong>Date:</strong> ${new Date(data.created_at || Date.now()).toLocaleString()}</p>
+  `;
+    }
+
+    // History Functions
     function initGrid(data) {
       const gridDiv = document.querySelector('#historyGrid');
 
       if (gridApi) {
         try {
           gridApi.destroy();
-        }
-        catch (e) {
+        } catch (e) {
           console.warn("Error destroying grid: ", e);
         }
         gridApi = null;
@@ -1192,7 +1286,6 @@
         rowData: data,
         pagination: true,
         paginationPageSize: 20,
-        //domLayout: 'autoHeight',
         onGridReady: (params) => {
           gridApi = params.api;
           params.api.sizeColumnsToFit();
@@ -1200,32 +1293,7 @@
       };
 
       new agGrid.Grid(gridDiv, gridOptions);
-
       updateSearchResultsCount(data.length);
-    }
-
-    function applySearch() {
-      currentSearchTerm = document.getElementById("searchInput").value.toLowerCase();
-      console.log("Afsar:", currentSearchTerm)
-      if (!currentSearchTerm) {
-        gridApi.setRowData(allRowData);
-        updateSearchResultsCount(allRowData.length);
-        return;
-      }
-
-      const filteredData = allRowData.filter(row => {
-        return Object.values(row).some(value => {
-          if (value === null || value === undefined) return false;
-          return String(value).toLowerCase().includes(currentSearchTerm);
-        });
-      });
-
-      gridApi.setRowData(filteredData);
-      updateSearchResultsCount(filteredData.length);
-    }
-
-    function updateSearchResultsCount(count) {
-      document.getElementById("searchResultsCount").textContent = `${count} records found`;
     }
 
     function dateFormatter(params) {
@@ -1262,153 +1330,12 @@
       return div;
     }
 
-function handlePdfExport(id) {
-  const token = localStorage.getItem('authToken');
-  
-  if (!token) {
-    showToast("Please login first", "error");
-    return;
-  }
-  const encodedToken = encodeURIComponent(token);
-  const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf?token=${encodedToken}`;
-  const newWindow = window.open(pdfUrl, '_blank');
-  if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-    showToast("Popup blocked. Please allow popups for this site.", "warning");
-    
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-}
-
-    // Update your PDF button event listener
-    document.getElementById("pdfBtn").addEventListener("click", function() {
-      if (latestID) {
-        handlePdfExport(latestID);
-      } else {
-        showToast("No submission to export", "warning");
-      }
-    });
-
-
-async function exportAllData() {
-  try {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      showToast("Please login first", "error");
-      return;
-    }
-
-    const exportBtn = document.querySelector("#exportFilteredBtn");
-    exportBtn.disabled = true;
-    exportBtn.innerHTML = "Exporting...";
-
-    // Encode the token for URL safety
-    const encodedToken = encodeURIComponent(token);
-    const url = `${customHost}:8000/requirement/export/all/xlsx?token=${encodedToken}`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Export failed');
-    }
-
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    a.download = `redx_all_requirements_${new Date().toISOString().slice(0,10)}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(downloadUrl);
-    a.remove();
-
-    showToast("All data exported successfully", "success");
-  } catch (error) {
-    console.error("Export error:", error);
-    showToast(error.message || "Error exporting all data", "error");
-  } finally {
-    const exportBtn = document.querySelector("#exportFilteredBtn");
-    if (exportBtn) {
-      exportBtn.disabled = false;
-      exportBtn.innerHTML = "Export All";
-    }
-  }
-}
-
-async function exportFilteredData() {
-  try {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      showToast("Please login first", "error");
-      return;
-    }
-
-    const exportBtn = document.querySelector("#exportFilteredBtn");
-    exportBtn.disabled = true;
-    exportBtn.innerHTML = "Exporting...";
-
-    const searchTerm = document.getElementById("searchInput").value;
-    const encodedToken = encodeURIComponent(token);
-    
-    let url = `${customHost}:8000/requirement/export/filtered/xlsx?token=${encodedToken}`;
-    if (searchTerm) {
-      url += `&query=${encodeURIComponent(searchTerm)}`;
-    }
-
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Export failed');
-    }
-
-    // Get the blob and create download link
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    
-    // Create a filename based on search term or default
-    let filename = 'redx_filtered_requirements';
-    if (searchTerm) {
-      filename += `_${searchTerm.substring(0, 20)}`;
-    }
-    filename += `_${new Date().toISOString().slice(0,10)}.xlsx`;
-    
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(downloadUrl);
-    a.remove();
-
-    showToast("Filtered data exported successfully", "success");
-  } catch (error) {
-    console.error("Export error:", error);
-    showToast(error.message || "Error exporting filtered data", "error");
-  } finally {
-    const exportBtn = document.querySelector("#exportFilteredBtn");
-    if (exportBtn) {
-      exportBtn.disabled = false;
-      exportBtn.innerHTML = "Export Filtered";
-    }
-  }
-}
-
     async function loadHistory() {
       document.getElementById("form-section").classList.add("hidden");
       document.getElementById("history-section").classList.remove("hidden");
 
       try {
+        
         const gridDiv = document.querySelector('#historyGrid');
         gridDiv.innerHTML = '';
 
@@ -1418,25 +1345,36 @@ async function exportFilteredData() {
         if (searchTerm) {
           url = `${customHost}:8000/requirement/search/?query=${encodeURIComponent(searchTerm)}`;
         }
-        token = localStorage.getItem('authToken')
 
-        const res = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
+        const response = await authFetch(url);
+
+        const role = localStorage.getItem('userRole')
+        const exportAllBtn = document.getElementById('exportAllBtn');
+        if(exportAllBtn){
+          if (role != 'superadmin'){
+            exportAllBtn.style.display = 'none';
           }
-        });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("API Error:", res.status, errorText);
-          throw new Error(`API Error: ${res.status} ${errorText}`);
+          else{
+            exportAllBtn.style.display = 'block';
+          }
         }
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+            if (response.status === 403) {
+              document.querySelector('#historyGrid').innerHTML = `
+                <div style="padding: 20px; text-align: center; color: red;">
+                  🚫 You do not have permission to view this section. Super Admin access is required.
+                </div>
+              `;
+              return;
+            }
+          throw new Error("Failed to load history");
+        }
+          
 
-        const data = await res.json();
+        const data = await response.json();
         const results = searchTerm ? data.results : data;
-
-        console.log("API Response:", results);
 
         if (results.length === 0) {
           gridDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--gray-dark);">No submission history found</div>';
@@ -1449,23 +1387,48 @@ async function exportFilteredData() {
         }));
 
         initGrid(formattedData);
-        updateSearchResultsCount(results.length);
       } catch (error) {
-        console.error("Full error loading history:", error);
+        console.error("Error loading history:", error);
         const gridDiv = document.querySelector('#historyGrid');
         gridDiv.innerHTML = `
-            <div style="padding: 20px; text-align: center; color: var(--danger-color);">
-                Error loading history: ${error.message}<br>
-                Please check console for details.
-            </div>
-        `;
+      <div style="padding: 20px; text-align: center; color: var(--danger-color);">
+        Error loading history: ${error.message}<br>
+      </div>
+    `;
       }
+    }
+
+    function applySearch() {
+      currentSearchTerm = document.getElementById("searchInput").value.toLowerCase();
+      if (!currentSearchTerm) {
+        gridApi.setRowData(allRowData);
+        updateSearchResultsCount(allRowData.length);
+        return;
+      }
+
+      const filteredData = allRowData.filter(row => {
+        return Object.values(row).some(value => {
+          if (value === null || value === undefined) return false;
+          return String(value).toLowerCase().includes(currentSearchTerm);
+        });
+      });
+
+      gridApi.setRowData(filteredData);
+      updateSearchResultsCount(filteredData.length);
+    }
+
+    function updateSearchResultsCount(count) {
+      document.getElementById("searchResultsCount").textContent = `${count} records found`;
     }
 
     async function loadEntry(id) {
       try {
-        const res = await fetch(`${customHost}:8000/requirement/${id}`);
-        const data = await res.json();
+        const response = await authFetch(`${customHost}:8000/requirement/${id}`);
+        if (!response.ok) {
+          throw new Error("Failed to load entry");
+        }
+
+        const data = await response.json();
 
         document.getElementById("customer_name").value = data.customer_name || "";
         document.getElementById("project_name").value = data.project_name || "";
@@ -1479,12 +1442,177 @@ async function exportFilteredData() {
           addRow();
         }
 
+        const formatServerSpec = (spec) => {
+          if (!spec) return "N/A";
+          return `
+            CPU: ${spec.cpu || 'N/A'},
+            RAM: ${spec.ram_gb || 'N/A'} GB,
+            HDD-(OS): ${spec.hdd_tb || 'N/A'} TB,
+            NIC: ${spec.nic || 'N/A'},
+          `.replace(/\s+/g, ' ').trim();
+        };
+
+        const summary = document.getElementById("summary");
+        summary.classList.remove("hidden");
+
+        document.getElementById("summary-content").innerHTML = `
+          <p><strong>Customer:</strong> ${data.customer_name}</p>
+          <p><strong>Project:</strong> ${data.project_name}</p>
+          <p><strong>Location:</strong> ${data.location || "-"}</p>
+          <p><strong>Assigned To:</strong> ${data.assigned_person || "-"}</p>
+          <p><strong>Total Cameras:</strong> ${data.camera_configs.reduce((a, c) => a + (c.qty || 1), 0)}</p>
+          <p><strong>Total Bandwidth:</strong> ${data.bandwidth || "N/A"} Mbps</p>
+          <p><strong>Total Recording Storage:</strong> ${data.storage_tb || "N/A"} TB</p>
+          <p><strong>Submission ID:</strong> ${data.id}</p>
+          <p><strong>Server:</strong> ${formatServerSpec(data.server_spec)}</p>
+          <p><strong>Date:</strong> ${new Date(data.created_at).toLocaleString()}</p>
+        `;
+
         latestID = data.id;
         showCreateForm();
         showToast("Entry loaded successfully", "success");
       } catch (error) {
         console.error("Error loading entry:", error);
-        showToast("Error loading entry", "error");
+        showToast(error.message || "Error loading entry", "error");
+      }
+    }
+
+    // Export Functions
+    async function handlePdfExport(id) {
+      if (!isTokenValid()) {
+        showTokenExpiredAlert();
+        return;
+      }
+
+      const token = localStorage.getItem('authToken');
+      const encodedToken = encodeURIComponent(token);
+      const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf?token=${encodedToken}`;
+
+      const newWindow = window.open(pdfUrl, '_blank');
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        showToast("Popup blocked. Please allow popups for this site.", "warning");
+
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+
+    function handlePdfDownload() {
+      if (latestID) {
+        handlePdfExport(latestID);
+      } else {
+        showToast("No submission to export", "warning");
+      }
+    }
+
+    async function exportAllData() {
+      try {
+        if (!isTokenValid()) {
+          showTokenExpiredAlert();
+          return;
+        }
+
+        const exportBtn = document.querySelector("#exportFilteredBtn");
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = "Exporting...";
+
+        const token = localStorage.getItem('authToken');
+        const encodedToken = encodeURIComponent(token);
+        const url = `${customHost}:8000/requirement/export/all/xlsx?token=${encodedToken}`;
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Export failed');
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `redx_all_requirements_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        a.remove();
+
+        showToast("All data exported successfully", "success");
+      } catch (error) {
+        console.error("Export error:", error);
+        showToast(error.message || "Error exporting all data", "error");
+      } finally {
+        const exportBtn = document.querySelector("#exportFilteredBtn");
+        if (exportBtn) {
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = "Export All";
+        }
+      }
+    }
+
+    async function exportFilteredData() {
+      try {
+        if (!isTokenValid()) {
+          showTokenExpiredAlert();
+          return;
+        }
+
+        const exportBtn = document.querySelector("#exportFilteredBtn");
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = "Exporting...";
+
+        const searchTerm = document.getElementById("searchInput").value;
+        const token = localStorage.getItem('authToken');
+        const encodedToken = encodeURIComponent(token);
+
+        let url = `${customHost}:8000/requirement/export/filtered/xlsx?token=${encodedToken}`;
+        if (searchTerm) {
+          url += `&query=${encodeURIComponent(searchTerm)}`;
+        }
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Export failed');
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+
+        let filename = 'redx_filtered_requirements';
+        if (searchTerm) {
+          filename += `_${searchTerm.substring(0, 20)}`;
+        }
+        filename += `_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        a.remove();
+
+        showToast("Filtered data exported successfully", "success");
+      } catch (error) {
+        console.error("Export error:", error);
+        showToast(error.message || "Error exporting filtered data", "error");
+      } finally {
+        const exportBtn = document.querySelector("#exportFilteredBtn");
+        if (exportBtn) {
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = "Export Filtered";
+        }
       }
     }
 
@@ -1511,12 +1639,10 @@ async function exportFilteredData() {
       showToast("JSON exported successfully", "success");
     }
 
-    function handlePdfDownload() {
-      if (latestID) {
-        window.open(`${customHost}:8000/requirement/${latestID}/export/pdf`, '_blank');
-      } else {
-        showToast("No submission to export", "warning");
-      }
+    // UI Functions
+    function showCreateForm() {
+      document.getElementById("form-section").classList.remove("hidden");
+      document.getElementById("history-section").classList.add("hidden");
     }
 
     function showToast(message, type = "info") {
@@ -1565,18 +1691,48 @@ async function exportFilteredData() {
       }, 3000);
     }
 
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function () {
+      updateAuthUI();
+
+      // Login modal handling
+      const modal = document.getElementById('loginModal');
+      document.getElementById('openLoginModal').addEventListener('click', function () {
+        if (isTokenValid()) {
+          logout();
+        } else {
+          modal.style.display = 'block';
+        }
+      });
+
+      document.getElementById('closeLoginModal').addEventListener('click', function () {
+        modal.style.display = 'none';
+      });
+
+      document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+      // Camera configuration functions
+      addRow();
+      document.getElementById("pdfBtn").addEventListener("click", handlePdfDownload);
+      document.getElementById("searchInput").addEventListener("keyup", function (event) {
+        if (event.key === "Enter") {
+          applySearch();
+        }
+      });
+    });
+
+    // Add spin animation for loading states
     const style = document.createElement('style');
     style.textContent = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .spin {
-        animation: spin 1s linear infinite;
-      }
-    `;
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+`;
     document.head.appendChild(style);
-
   </script>
 </body>
 

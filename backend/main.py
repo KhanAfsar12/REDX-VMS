@@ -83,19 +83,10 @@ def get_config():
 
 async def get_current_user(Authorize: AuthJWT=Depends()):
     try:
-        print("=== Checking JWT ===")
-        Authorize.jwt_required()
-        username = Authorize.get_jwt_subject()
-        print("JWT Subject Username:", username)
-
-        raw_jwt = Authorize.get_raw_jwt()
-        print("Raw JWT:", raw_jwt)
-        print("[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]")
         Authorize.jwt_required()
         username = Authorize.get_jwt_subject()
         user_data = Authorize.get_raw_jwt()
         role = user_data.get('role', "user")
-        print(username)
         user = users_collection.find_one({"username": username})
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
@@ -143,7 +134,11 @@ async def login(user_data: UserLogin, Authorize: AuthJWT = Depends()):
         subject=user["username"],
         user_claims={"role": user["role"]}
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    decoded_token = Authorize.get_raw_jwt(access_token)
+    expires_at = decoded_token['exp']
+    role = decoded_token['role']
+    return {"access_token": access_token, "token_type": "bearer", "expires_at": expires_at, "role":role}
 
 @app.post('/logout')
 def logout():
@@ -198,7 +193,7 @@ def create_requirement(req: RequirementRequest, current_user: User = Depends(get
             "camera_configs": camera_configs,
             "created_at": datetime.utcnow(),
             "bandwidth": round(total_bitrate, 2),
-            "storage_tb": calculate_storage(total_bitrate, max_retention, avg_record_hour),   #This is for Recording Space not OS 
+            "storage_tb": calculate_storage(total_bitrate, max_retention, avg_record_hour), 
             "server_spec": recommend_server(sum(cam.qty for cam in req.camera_configs), total_bitrate, round(total_bitrate, 2), max_retention, avg_record_hour, camera_configs)
         }
         collection.insert_one(doc)
@@ -209,7 +204,8 @@ def create_requirement(req: RequirementRequest, current_user: User = Depends(get
 
 
 @app.get("/requirement/{id}", response_model=RequirementResponse)
-def get_requirement(id: str):
+def get_requirement(id: str, Authorize: AuthJWT=Depends()):
+    Authorize.jwt_required()
     doc = collection.find_one({"_id": id})
     if not doc:
         raise HTTPException(status_code=404, detail="Requirement not found")
@@ -253,50 +249,39 @@ def export_excel(id: str):
 @app.get("/requirement/{id}/export/pdf")
 async def export_pdf(
     id: str,
-    token: str = Query(..., description="JWT token for authentication"),  # Required parameter
+    token: str = Query(..., description="JWT token for authentication"),
     Authorize: AuthJWT = Depends()
 ):
     try:
-        # Verify the token from query parameter
         Authorize.jwt_required("access", token=token)
         
         current_user = Authorize.get_jwt_subject()
-        print(f"PDF export requested by: {current_user}")
         jwt_claims = Authorize.get_raw_jwt()
-        print(f"JWT Claims: {jwt_claims}")
-        # Get the requirement data
         doc = collection.find_one({"_id": id})
         if not doc:
             raise HTTPException(status_code=404, detail="Requirement not found")
 
-        # Calculate bandwidth for each camera
         for cam in doc.get("camera_configs", []):
             quantity = cam.get('qty', 1)
             bitrate_kbps = cam.get('bitrate_kbps', 0)
             cam["bandwidth"] = round(bitrate_kbps * quantity / 1024, 2)
 
-        # Render PDF
         template = env.get_template("report_template.html")
         html_out = template.render(
             data=doc,
             created=datetime.now().strftime("%d-%b-%Y"),
             user=current_user
         )
-
-        # Ensure exports directory exists
         os.makedirs(EXPORT_DIR, exist_ok=True)
         pdf_path = os.path.join(EXPORT_DIR, f"requirement_{id}.pdf")
         
-        # Generate PDF
         HTML(string=html_out).write_pdf(pdf_path)
         
-        # Return the PDF file
         return FileResponse(
             pdf_path,
             filename=f"redx_report_{id}.pdf",
             media_type='application/pdf'
         )
-
     except Exception as e:
         print(f"PDF export error: {str(e)}")
         error_detail = "Invalid or expired token" if "token" in str(e).lower() else str(e)
@@ -306,7 +291,8 @@ async def export_pdf(
         )
 
 @app.get("/requirement/list/")
-def list_all_requirements(current_user: User = Depends(get_current_user)):
+def list_all_requirements(current_user: User = Depends(get_superadmin)):
+    print(current_user, "[[[[[[[[[[[[[]]]]]]]]]]]]]")
     results = []
     for doc in collection.find().sort("created_at", -1):
         total_qty = sum(cam.get("qty", 1) for cam in doc.get('camera_configs', []))
@@ -327,7 +313,6 @@ def list_all_requirements(current_user: User = Depends(get_current_user)):
 @app.get("/requirement/export/all/xlsx")
 def export_all_excel(token: str = Query(..., description="JWT token for authentication"), Authorize: AuthJWT = Depends()):
     try:
-        # Verify the token
         Authorize.jwt_required("access", token=token)
         current_user = Authorize.get_jwt_subject()
         
@@ -423,7 +408,6 @@ def export_filtered_excel(
     Authorize: AuthJWT = Depends()
 ):
     try:
-        # Verify the token
         Authorize.jwt_required("access", token=token)
         current_user = Authorize.get_jwt_subject()
             

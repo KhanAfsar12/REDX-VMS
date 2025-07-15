@@ -1263,28 +1263,18 @@
     }
 
 function handlePdfExport(id) {
-  // Get token from localStorage
   const token = localStorage.getItem('authToken');
   
   if (!token) {
     showToast("Please login first", "error");
     return;
   }
-
-  // Encode the token for URL safety
   const encodedToken = encodeURIComponent(token);
-  
-  // Construct the URL with token parameter
   const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf?token=${encodedToken}`;
-  
-  // Open in new tab
   const newWindow = window.open(pdfUrl, '_blank');
-  
-  // Fallback if popup is blocked
   if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
     showToast("Popup blocked. Please allow popups for this site.", "warning");
     
-    // Alternative download method
     const link = document.createElement('a');
     link.href = pdfUrl;
     document.body.appendChild(link);
@@ -1293,57 +1283,126 @@ function handlePdfExport(id) {
   }
 }
 
-// Update your PDF button event listener
-document.getElementById("pdfBtn").addEventListener("click", function() {
-  if (latestID) {
-    handlePdfExport(latestID);
-  } else {
-    showToast("No submission to export", "warning");
+    // Update your PDF button event listener
+    document.getElementById("pdfBtn").addEventListener("click", function() {
+      if (latestID) {
+        handlePdfExport(latestID);
+      } else {
+        showToast("No submission to export", "warning");
+      }
+    });
+
+
+async function exportAllData() {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      showToast("Please login first", "error");
+      return;
+    }
+
+    const exportBtn = document.querySelector("#exportFilteredBtn");
+    exportBtn.disabled = true;
+    exportBtn.innerHTML = "Exporting...";
+
+    // Encode the token for URL safety
+    const encodedToken = encodeURIComponent(token);
+    const url = `${customHost}:8000/requirement/export/all/xlsx?token=${encodedToken}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `redx_all_requirements_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    a.remove();
+
+    showToast("All data exported successfully", "success");
+  } catch (error) {
+    console.error("Export error:", error);
+    showToast(error.message || "Error exporting all data", "error");
+  } finally {
+    const exportBtn = document.querySelector("#exportFilteredBtn");
+    if (exportBtn) {
+      exportBtn.disabled = false;
+      exportBtn.innerHTML = "Export All";
+    }
   }
-});
+}
 
-    async function exportAllData() {
-      try {
-        const exportBtn = document.querySelector("#exportFilteredBtn");
-        exportBtn.disabled = true;
-        exportBtn.innerHTML = "Exporting...";
-
-        window.open(`${customHost}:8000/requirement/export/all/xlsx`, '_blank');
-
-        setTimeout(() => {
-          exportBtn.disabled = false;
-          exportBtn.innerHTML = "Export Filtered";
-        }, 2000);
-      } catch (error) {
-        console.error("Export error:", error);
-        showToast("Error exporting all data", "error");
-      }
+async function exportFilteredData() {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      showToast("Please login first", "error");
+      return;
     }
 
-    async function exportFilteredData() {
-      try {
-        const exportBtn = document.querySelector("#exportFilteredBtn");
-        exportBtn.disabled = true;
-        exportBtn.innerHTML = "Exporting...";
+    const exportBtn = document.querySelector("#exportFilteredBtn");
+    exportBtn.disabled = true;
+    exportBtn.innerHTML = "Exporting...";
 
-        const searchTerm = document.getElementById("searchInput").value;
-        let url = `${customHost}:8000/requirement/export/filtered/xlsx`;
-
-        if (searchTerm) {
-          url += `?query=${encodeURIComponent(searchTerm)}`;
-        }
-
-        window.open(url, '_blank');
-
-        setTimeout(() => {
-          exportBtn.disabled = false;
-          exportBtn.innerHTML = "Export Filtered";
-        }, 2000);
-      } catch (error) {
-        console.error("Export error:", error);
-        showToast("Error exporting filtered data", "error");
-      }
+    const searchTerm = document.getElementById("searchInput").value;
+    const encodedToken = encodeURIComponent(token);
+    
+    let url = `${customHost}:8000/requirement/export/filtered/xlsx?token=${encodedToken}`;
+    if (searchTerm) {
+      url += `&query=${encodeURIComponent(searchTerm)}`;
     }
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the blob and create download link
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    
+    // Create a filename based on search term or default
+    let filename = 'redx_filtered_requirements';
+    if (searchTerm) {
+      filename += `_${searchTerm.substring(0, 20)}`;
+    }
+    filename += `_${new Date().toISOString().slice(0,10)}.xlsx`;
+    
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    a.remove();
+
+    showToast("Filtered data exported successfully", "success");
+  } catch (error) {
+    console.error("Export error:", error);
+    showToast(error.message || "Error exporting filtered data", "error");
+  } finally {
+    const exportBtn = document.querySelector("#exportFilteredBtn");
+    if (exportBtn) {
+      exportBtn.disabled = false;
+      exportBtn.innerHTML = "Export Filtered";
+    }
+  }
+}
 
     async function loadHistory() {
       document.getElementById("form-section").classList.add("hidden");
@@ -1359,8 +1418,14 @@ document.getElementById("pdfBtn").addEventListener("click", function() {
         if (searchTerm) {
           url = `${customHost}:8000/requirement/search/?query=${encodeURIComponent(searchTerm)}`;
         }
+        token = localStorage.getItem('authToken')
 
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
         if (!res.ok) {
           const errorText = await res.text();

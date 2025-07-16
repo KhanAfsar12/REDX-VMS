@@ -375,6 +375,16 @@
       gap: 20px;
     }
 
+    .create-user a{
+      text-decoration: none;
+      color: white;
+      background-color: VAR(--secondary-color);
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: inline-block;
+      margin-left: 1257PX;
+    }
+
     .card {
       background: white;
       border-radius: 8px;
@@ -747,6 +757,9 @@
     <div id="history-section" class="hidden">
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" id="exportAllBtn">
+          <div class="create-user">
+            <button id="createUserBtn" class="btn-secondary">Create user</button>
+          </div>
           <h2>Submission History</h2>
           <div class="export-actions">
             <button class="btn-outline" onclick="exportAllData()">
@@ -827,6 +840,7 @@
     function clearAuthData() {
       localStorage.removeItem('authToken');
       localStorage.removeItem('tokenExpiry');
+      localStorage.removeItem('userRole');
       updateAuthUI();
       showTokenExpiredAlert();
     }
@@ -1638,6 +1652,57 @@
 
       showToast("JSON exported successfully", "success");
     }
+
+
+    //Create User by superadmin'
+document.getElementById('createUserBtn').addEventListener('click', async function() {
+  if (!isTokenValid()) {
+    showTokenExpiredAlert();
+    document.getElementById('loginModal').style.display = 'block';
+    return;
+  }
+
+  const token = localStorage.getItem('authToken');
+  
+  try {
+    // Show loading indicator
+    document.body.style.cursor = 'wait';
+    this.disabled = true;
+    this.innerHTML = 'Loading...';
+
+    // Fetch the admin page with the token in headers
+    const response = await fetch(`${customHost}:8000/admin`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      const html = await response.text();
+      
+      // Replace the current page content
+      document.open();
+      document.write(html);
+      document.close();
+      
+      // Update browser history
+      window.history.pushState({}, '', '/admin');
+      
+    } else {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to load admin dashboard');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast(error.message || 'Failed to access admin dashboard', 'error');
+  } finally {
+    document.body.style.cursor = '';
+    this.disabled = false;
+    this.innerHTML = 'Create user';
+  }
+});   
+          
 
     // UI Functions
     function showCreateForm() {

@@ -10,7 +10,7 @@ from jose import JWTError, jwt
 
 class Settings(BaseModel):
     authjwt_secret_key: str = "afsarkhan$$@#656"
-    authjwt_access_token_expires: timedelta = timedelta(minutes=3)
+    authjwt_access_token_expires: timedelta = timedelta(minutes=30)
     authjwt_algorithm: str = "HS256" 
     authjwt_token_location: list = ['headers']
     authjwt_query_string_name: str = "token" 

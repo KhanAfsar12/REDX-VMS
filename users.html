@@ -1,3 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REDX VMS Dashboard</title>
+</head>
+<body>
+    <form id="createUserForm" action="{{ url_for('admin/users') }}" method="post">
+        <div class="modal-body">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="fullName" class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="fullName" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            <div class="mb-3">
+                <label for="role" class="form-label">Role</label>
+                <select class="form-select" id="role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="disabled">
+                <label class="form-check-label" for="disabled">Disabled</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Create User</button>
+        </div>
+    </form>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
 from typing import List, Optional
 from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -102,6 +160,7 @@ async def get_current_user(Authorize: AuthJWT=Depends()):
         user = users_collection.find_one({"username": username})
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        print("User is authenticated")
         return  UserInDB(**user)
     except Exception as e:
         raise HTTPException(
@@ -111,22 +170,21 @@ async def get_current_user(Authorize: AuthJWT=Depends()):
     
 async def get_superadmin(Authorize: AuthJWT = Depends()):
     try:
-        # First verify the JWT token
         Authorize.jwt_required()
-        # Get the current user from the token
         username = Authorize.get_jwt_subject()
         user_data = Authorize.get_raw_jwt()
-        
-        # Check if user exists and is superadmin
+        role = user_data.get('role', "user")
+        print("role:", role)
         user = users_collection.find_one({"username": username})
+        print(user, "...............................")
         if not user or user.get("role") != "superadmin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='Super Admin privileges required'
             )
-            
-        return UserInDB(**user)
         
+        return role
+    
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -529,13 +587,10 @@ def export_filtered_excel(
 
 
 @app.get('/admin', response_class=HTMLResponse)
-async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get_superadmin)):
+async def admin_dashboard(request: Request, current_user: UserInDB=Depends(get_superadmin)):
     try:
-
-        print("current user in dashboard:", current_user)
-        
-        user = users_collection.find_one({"username": current_user.username})
-        print(user,  type(user))
+        print("current_user:", current_user)
+        user = users_collection.find_one({"username": current_user})
         if not user or user.get("role") != "superadmin":
             raise HTTPException(status_code=403, detail="Superadmin access required")
         
@@ -556,14 +611,17 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
 
 
 @app.get("/admin/users/", response_model=UserListResponse)
-async def list_users(current_user: User = Depends(get_superadmin)):
+async def list_users(
+    request: Request,
+    role: str = Depends(get_superadmin)  # Will automatically get the request
+):
     users = list(users_collection.find({}, {"hashed_password": 0}))
     return {"users": users}
 
-@app.post("/admin/users/", response_model=UserInDB)
+@app.post("/admin/users/", response_model=User)
 async def create_user_admin(
     user_data: AdminUserCreate,
-    current_user: UserInDB = Depends(get_superadmin)
+    current_user: User = Depends(get_superadmin)
 ):
     existing_user = users_collection.find_one({"$or": [{"username": user_data.username}, {"email": user_data.email}]})
     if existing_user:
@@ -575,12 +633,10 @@ async def create_user_admin(
     del user_dict['password']
     
     users_collection.insert_one(user_dict)
-    print("______________________________________________________________________________")
     return user_dict
 
-
 @app.delete("/admin/users/{username}")
-async def delete_user(username: str, current_user: User = Depends(get_superadmin)):
+async def delete_user(username: str, current_user: UserInDB = Depends(get_superadmin)):
     if username == "superadmin":
         raise HTTPException(status_code=400, detail="Cannot delete superadmin")
     

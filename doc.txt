@@ -11,3 +11,7 @@ Example:
 
 
 isse mera issue solve nahi hua hai but maine problem ko identity kar liya hai wajah iski yeh hai ke jab bhi mai Create user button ko click karta hoon tab /admin ka page achche se dikh hai url me is tarah hai :8000/admin but mai jab refresh karta hoon  tab token invalid batata hai
+
+
+
+change header with credentials in index1.html

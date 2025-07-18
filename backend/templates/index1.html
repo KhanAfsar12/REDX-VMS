@@ -9,6 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <!-- AG Grid Community Version -->
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/dist/ag-grid-community.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/styles/ag-grid.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/styles/ag-theme-alpine.css" />
   <style>
@@ -72,100 +75,6 @@
 
     .login-btn.logout {
       background-color: var(--danger-color);
-    }
-
-    /* Modal styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-    }
-
-    .modal-content {
-      background-color: white;
-      margin: 10% auto;
-      padding: 20px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--gray-medium);
-    }
-
-    .modal-title {
-      color: var(--accent-color);
-      margin: 0;
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--gray-dark);
-    }
-
-    .modal-form .form-group {
-      margin-bottom: 15px;
-    }
-
-    .modal-form label {
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .modal-form input {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid var(--gray-medium);
-      border-radius: 4px;
-    }
-
-    .submit-btn {
-      width: 100%;
-      padding: 10px;
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .submit-btn:hover {
-      background-color: #c1121f;
-    }
-
-    .error-message {
-      color: var(--danger-color);
-      font-size: 12px;
-      margin-top: 5px;
-      display: none;
-    }
-
-    .success-message {
-      color: var(--success-color);
-      text-align: center;
-      margin-top: 15px;
-      display: none;
-    }
-
-    .register>a {
-      text-decoration: none;
-      color: var(--secondary-color);
     }
 
     h1,
@@ -375,7 +284,7 @@
       gap: 20px;
     }
 
-    .create-user a{
+    .create-user a {
       text-decoration: none;
       color: white;
       background-color: VAR(--secondary-color);
@@ -502,31 +411,6 @@
       flex-wrap: wrap;
     }
 
-    /* Token expired alert */
-    .token-expired {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: var(--danger-color);
-      color: white;
-      padding: 10px;
-      text-align: center;
-      z-index: 1000;
-      display: none;
-      animation: slideDown 0.5s ease-out;
-    }
-
-    @keyframes slideDown {
-      from {
-        transform: translateY(-100%);
-      }
-
-      to {
-        transform: translateY(0);
-      }
-    }
-
     /* Responsive adjustments */
     @media (max-width: 768px) {
       .container {
@@ -601,44 +485,30 @@
 </head>
 
 <body>
-  <div class="token-expired" id="tokenExpiredAlert">
-    Your session has expired. Please login again.
-  </div>
-
   <div class="container">
-    <h1>REDX VMS Requirement Portal</h1>
     <div class="button">
-      <button class="login-btn" id="openLoginModal">Login</button>
-    </div>
-
-    <!-- Login Modal -->
-    <div class="modal" id="loginModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="modal-title">Login to Your Account</h2>
-          <button class="close-btn" id="closeLoginModal">&times;</button>
-        </div>
-        <form class="modal-form" id="loginForm">
-          <div class="form-group">
-            <label for="loginUsername">Username</label>
-            <input type="text" id="loginUsername" name="username" required>
-            <div class="error-message" id="loginUsernameError">Please enter a valid username</div>
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" name="password" required minlength="8">
-            <div class="error-message" id="loginPasswordError">Password must be at least 8 characters</div>
-          </div>
-          <button type="submit" class="submit-btn">Login</button>
-          <div class="success-message" id="loginSuccessMessage">
-            Login successful! Redirecting...
-          </div>
-        </form>
-        <div class="register">
-          <a href="{{ url_for('register') }}">Create Account</a>
-        </div>
+      {% if is_authenticated %}
+      <div class="d-flex align-items-center" style="margin-bottom: 10px;">
+        <span class="me-3 text-muted" id="currentUser"></span>
+        <a href="{{ url_for('logout') }}">
+          <button class="btn btn-outline-danger" id="logoutBtn">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </button>
+        </a>
       </div>
+      {% else %}
+      <div class="d-flex align-items-center" style="margin-bottom: 10px;">
+        <span class="me-3 text-muted" id="currentUser"></span>
+        <a href="{{ url_for('login') }}">
+          <button class="btn btn-outline-danger" id="logoutBtn">
+            <i class="bi bi-box-arrow-in-right"></i> Login
+          </button>
+        </a>
+      </div>
+      {% endif %}
     </div>
+    <h1>REDX VMS Requirement Portal</h1>
+    
 
     <div class="tab-btns">
       <button class="btn-primary" onclick="showCreateForm()">
@@ -756,7 +626,8 @@
 
     <div id="history-section" class="hidden">
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" id="exportAllBtn">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"
+          id="exportAllBtn">
           <div class="create-user">
             <button id="createUserBtn" class="btn-secondary">Create user</button>
           </div>
@@ -826,163 +697,6 @@
     let gridApi = null;
     let allRowData = [];
     let currentSearchTerm = "";
-
-    // Token Management Functions
-    function storeTokenData(tokenData) {
-      localStorage.setItem('authToken', tokenData.access_token);
-      const expiresAt = tokenData.expires_at * 1000;
-      localStorage.setItem('tokenExpiry', expiresAt.toString());
-      const userRole = tokenData.role;
-      localStorage.setItem("userRole", userRole.toString());
-      updateAuthUI();
-    }
-
-    function clearAuthData() {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('tokenExpiry');
-      localStorage.removeItem('userRole');
-      updateAuthUI();
-      showTokenExpiredAlert();
-    }
-
-    function isTokenValid() {
-      const token = localStorage.getItem('authToken');
-      const expiry = localStorage.getItem('tokenExpiry');
-
-      if (!token || !expiry) return false;
-
-      const now = Date.now();
-      return now < parseInt(expiry);
-    }
-
-    function updateAuthUI() {
-      const loginBtn = document.getElementById('openLoginModal');
-      if (loginBtn) {
-        if (isTokenValid()) {
-          loginBtn.textContent = 'Logout';
-          loginBtn.classList.add('logout');
-        } else {
-          loginBtn.textContent = 'Login';
-          loginBtn.classList.remove('logout');
-        }
-      }
-    }
-
-    function showTokenExpiredAlert() {
-      const alert = document.getElementById('tokenExpiredAlert');
-      alert.style.display = 'block';
-      setTimeout(() => {
-        alert.style.display = 'none';
-      }, 5000);
-    }
-
-    // Authenticated Fetch Wrapper
-    async function authFetch(url, options = {}) {
-      if (!isTokenValid()) {
-        clearAuthData();
-        return Promise.reject(new Error('Token expired or invalid'));
-      }
-
-      const token = localStorage.getItem('authToken');
-      const headers = {
-        ...options.headers,
-        'Authorization': `Bearer ${token}`
-      };
-
-      try {
-        const response = await fetch(url, { ...options, headers });
-
-        if (response.status === 401) {
-          clearAuthData();
-          return Promise.reject(new Error('Unauthorized'));
-        }
-
-        return response;
-      } catch (error) {
-        console.error('Fetch error:', error);
-        throw error;
-      }
-    }
-
-    setInterval(() => {
-      if (!isTokenValid()) {
-        clearAuthData();
-      }
-    }, 60000);
-
-    // Login Function
-    async function handleLogin(e) {
-      e.preventDefault();
-      document.querySelectorAll('.error-message').forEach(el => {
-        el.style.display = 'none';
-      });
-
-      const username = document.getElementById('loginUsername').value;
-      const password = document.getElementById('loginPassword').value;
-      let isValid = true;
-
-      if (!username) {
-        document.getElementById('loginUsernameError').style.display = 'block';
-        isValid = false;
-      }
-      if (!password || password.length < 8) {
-        document.getElementById('loginPasswordError').style.display = 'block';
-        isValid = false;
-      }
-
-      if (!isValid) return;
-
-      const submitBtn = document.querySelector('#loginForm button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = "Logging in...";
-
-      try {
-        const response = await fetch(`${customHost}:8000/login`, {
-          method: 'POST',
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ username, password })
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.detail || 'Login Failed');
-        }
-
-        const data = await response.json();
-        storeTokenData(data);
-
-        document.getElementById('loginSuccessMessage').style.display = 'block';
-        setTimeout(() => {
-          document.getElementById('loginModal').style.display = 'none';
-          showToast('Login Successful', 'success');
-        }, 1500);
-      } catch (error) {
-        console.error('Login error:', error);
-        showToast(error.message || 'Login failed', 'error');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Login';
-      }
-    }
-
-    // Logout Function
-    async function logout() {
-      try {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          await authFetch(`${customHost}:8000/logout`, {
-            method: 'POST'
-          });
-        }
-      } catch (error) {
-        console.error('Logout error:', error);
-      } finally {
-        clearAuthData();
-        showToast('Logged out successfully', 'success');
-      }
-    }
 
     // Camera Configuration Functions
     function calculateBitrate(resolution, fps, codec, qualityFactor = 1) {
@@ -1181,11 +895,9 @@
   `;
 
       try {
-        const response = await authFetch(`${customHost}:8000/requirement/`, {
+        const response = await fetch(`${customHost}:8000/requirement/`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          credentials:"include",
           body: JSON.stringify(payload)
         });
 
@@ -1349,7 +1061,7 @@
       document.getElementById("history-section").classList.remove("hidden");
 
       try {
-        
+
         const gridDiv = document.querySelector('#historyGrid');
         gridDiv.innerHTML = '';
 
@@ -1360,32 +1072,21 @@
           url = `${customHost}:8000/requirement/search/?query=${encodeURIComponent(searchTerm)}`;
         }
 
-        const response = await authFetch(url);
+        const response = await fetch(url);
 
-        const role = localStorage.getItem('userRole')
-        const exportAllBtn = document.getElementById('exportAllBtn');
-        if(exportAllBtn){
-          if (role != 'superadmin'){
-            exportAllBtn.style.display = 'none';
-          }
-          else{
-            exportAllBtn.style.display = 'block';
-          }
-        }
-        
         if (!response.ok) {
           const errorText = await response.text();
-            if (response.status === 403) {
-              document.querySelector('#historyGrid').innerHTML = `
+          if (response.status === 403) {
+            document.querySelector('#historyGrid').innerHTML = `
                 <div style="padding: 20px; text-align: center; color: red;">
                   🚫 You do not have permission to view this section. Super Admin access is required.
                 </div>
               `;
-              return;
-            }
+            return;
+          }
           throw new Error("Failed to load history");
         }
-          
+
 
         const data = await response.json();
         const results = searchTerm ? data.results : data;
@@ -1437,7 +1138,7 @@
 
     async function loadEntry(id) {
       try {
-        const response = await authFetch(`${customHost}:8000/requirement/${id}`);
+        const response = await fetch(`${customHost}:8000/requirement/${id}`);
         if (!response.ok) {
           throw new Error("Failed to load entry");
         }
@@ -1493,14 +1194,7 @@
 
     // Export Functions
     async function handlePdfExport(id) {
-      if (!isTokenValid()) {
-        showTokenExpiredAlert();
-        return;
-      }
-
-      const token = localStorage.getItem('authToken');
-      const encodedToken = encodeURIComponent(token);
-      const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf?token=${encodedToken}`;
+      const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf`;
 
       const newWindow = window.open(pdfUrl, '_blank');
       if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
@@ -1524,24 +1218,13 @@
 
     async function exportAllData() {
       try {
-        if (!isTokenValid()) {
-          showTokenExpiredAlert();
-          return;
-        }
-
         const exportBtn = document.querySelector("#exportFilteredBtn");
         exportBtn.disabled = true;
         exportBtn.innerHTML = "Exporting...";
 
-        const token = localStorage.getItem('authToken');
-        const encodedToken = encodeURIComponent(token);
-        const url = `${customHost}:8000/requirement/export/all/xlsx?token=${encodedToken}`;
+        const url = `${customHost}:8000/requirement/export/all/xlsx`;
 
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error('Export failed');
@@ -1572,29 +1255,18 @@
 
     async function exportFilteredData() {
       try {
-        if (!isTokenValid()) {
-          showTokenExpiredAlert();
-          return;
-        }
-
         const exportBtn = document.querySelector("#exportFilteredBtn");
         exportBtn.disabled = true;
         exportBtn.innerHTML = "Exporting...";
 
         const searchTerm = document.getElementById("searchInput").value;
-        const token = localStorage.getItem('authToken');
-        const encodedToken = encodeURIComponent(token);
 
-        let url = `${customHost}:8000/requirement/export/filtered/xlsx?token=${encodedToken}`;
+        let url = `${customHost}:8000/requirement/export/filtered/xlsx`;
         if (searchTerm) {
-          url += `&query=${encodeURIComponent(searchTerm)}`;
+          url += `?query=${encodeURIComponent(searchTerm)}`;
         }
 
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error('Export failed');
@@ -1653,57 +1325,6 @@
       showToast("JSON exported successfully", "success");
     }
 
-
-    //Create User by superadmin'
-document.getElementById('createUserBtn').addEventListener('click', async function() {
-  if (!isTokenValid()) {
-    showTokenExpiredAlert();
-    document.getElementById('loginModal').style.display = 'block';
-    return;
-  }
-
-  const token = localStorage.getItem('authToken');
-  
-  try {
-    // Show loading indicator
-    document.body.style.cursor = 'wait';
-    this.disabled = true;
-    this.innerHTML = 'Loading...';
-
-    // Fetch the admin page with the token in headers
-    const response = await fetch(`${customHost}:8000/admin`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (response.ok) {
-      const html = await response.text();
-      
-      // Replace the current page content
-      document.open();
-      document.write(html);
-      document.close();
-      
-      // Update browser history
-      window.history.pushState({}, '', '/admin');
-      
-    } else {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to load admin dashboard');
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    showToast(error.message || 'Failed to access admin dashboard', 'error');
-  } finally {
-    document.body.style.cursor = '';
-    this.disabled = false;
-    this.innerHTML = 'Create user';
-  }
-});   
-          
-
     // UI Functions
     function showCreateForm() {
       document.getElementById("form-section").classList.remove("hidden");
@@ -1758,24 +1379,6 @@ document.getElementById('createUserBtn').addEventListener('click', async functio
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function () {
-      updateAuthUI();
-
-      // Login modal handling
-      const modal = document.getElementById('loginModal');
-      document.getElementById('openLoginModal').addEventListener('click', function () {
-        if (isTokenValid()) {
-          logout();
-        } else {
-          modal.style.display = 'block';
-        }
-      });
-
-      document.getElementById('closeLoginModal').addEventListener('click', function () {
-        modal.style.display = 'none';
-      });
-
-      document.getElementById('loginForm').addEventListener('submit', handleLogin);
-
       // Camera configuration functions
       addRow();
       document.getElementById("pdfBtn").addEventListener("click", handlePdfDownload);

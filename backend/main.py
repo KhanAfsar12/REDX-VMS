@@ -1,8 +1,9 @@
 from typing import List, Optional
 from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from fastapi_jwt_auth import AuthJWT
 from datetime import datetime
 from uuid import uuid4
@@ -15,6 +16,9 @@ import os
 import socket
 from schema import RequirementRequest, RequirementResponse, UserCreate, UserLogin
 from utils import Settings, build_search_filter, calculate_storage, estimate_bitrate, get_password_hash, recommend_server, update_bitrate, verify_password
+
+hostname = socket.gethostname()
+local_ip = socket.gethostbyname(hostname)
 
 
 app = FastAPI()
@@ -37,6 +41,10 @@ os.makedirs(EXPORT_DIR, exist_ok=True)
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
 
 templates = Jinja2Templates(directory=TEMPLATE_DIR)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+static_dir = os.path.join(BASE_DIR, ".", "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 class User(BaseModel):
@@ -70,6 +78,22 @@ class UserListResponse(BaseModel):
     users: List[User]
 
 
+class UserBase(BaseModel):
+    username: str
+    email : str
+    role : str
+
+class UserCreate(UserBase):
+    password : str
+
+class UserUpdate(BaseModel):
+    email : Optional[str] = None
+    password : Optional[str] = None
+    role : Optional[str] = None
+
+class UserOut(UserBase):
+    pass
+
 
 def create_superadmin():
     superadmin = users_collection.find_one({"username": "superadmin"})
@@ -85,8 +109,7 @@ def create_superadmin():
         })
 create_superadmin()
 
-hostname = socket.gethostname()
-local_ip = socket.gethostbyname(hostname)
+
 
 
 @AuthJWT.load_config
@@ -111,13 +134,12 @@ async def get_current_user(Authorize: AuthJWT=Depends()):
     
 async def get_superadmin(Authorize: AuthJWT = Depends()):
     try:
-        # First verify the JWT token
         Authorize.jwt_required()
-        # Get the current user from the token
         username = Authorize.get_jwt_subject()
         user_data = Authorize.get_raw_jwt()
+
+        print("user_data:", user_data)
         
-        # Check if user exists and is superadmin
         user = users_collection.find_one({"username": username})
         if not user or user.get("role") != "superadmin":
             raise HTTPException(
@@ -154,26 +176,36 @@ async def register(user: UserCreate):
     users_collection.insert_one(user_dict)
     return user_dict
 
+@app.get("/login")
+async def login(request:Request):
+    context = {
+        "request":request,
+        "local_ip": local_ip
+    }
+    return templates.TemplateResponse("login.html", context)
 
 @app.post('/login')
-async def login(user_data: UserLogin, Authorize: AuthJWT = Depends()):
-    user = users_collection.find_one({"username": user_data.username})
-    if not user or not verify_password(user_data.password, user['hashed_password']):
+async def login(username: str=Form(...),password: str=Form(...), Authorize: AuthJWT = Depends()):
+    user = users_collection.find_one({"username": username})
+    print("user:", user)
+    if not user or not verify_password(password, user['hashed_password']):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username or password')
     
-    access_token = Authorize.create_access_token(
-        subject=user["username"],
-        user_claims={"role": user["role"]}
-    )
+    access_token = Authorize.create_access_token(subject=username)
+    refresh_token = Authorize.create_refresh_token(subject=username)
+    print("Access Token:", access_token)
+    if user.get('role') == "user":
+        response = RedirectResponse(url='/', status_code=302)
+    if user.get('role') == "superadmin":
+        response = RedirectResponse(url='/admin', status_code=302)
+    Authorize.set_access_cookies(access_token, response)
+    return response
 
-    decoded_token = Authorize.get_raw_jwt(access_token)
-    expires_at = decoded_token['exp']
-    role = decoded_token['role']
-    return {"access_token": access_token, "token_type": "bearer", "expires_at": expires_at, "role":role}
-
-@app.post('/logout')
-def logout():
-    return {"message": "Successfully logged out (client should delete token)"}
+@app.get('/logout')
+def logout(Authorize: AuthJWT = Depends()):
+    response = RedirectResponse(url='/', status_code=302)
+    Authorize.unset_jwt_cookies(response)
+    return response
 
 
 @app.get('/protected')
@@ -189,9 +221,14 @@ async def admin_route(superadmin: User = Depends(get_superadmin)):
 def home(request: Request):
 
     print("local_ip:", local_ip)
+    is_authenticated = False
+    if request.cookies.get("access_token_cookie"):
+        print(request.cookies.get("access_token_cookie"))
+        is_authenticated = True
     context = {
         "request": request,
-        "local_ip": local_ip
+        "local_ip": local_ip,
+        "is_authenticated": is_authenticated
     }
     return templates.TemplateResponse("index1.html", context)
 
@@ -555,41 +592,42 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
         return templates.TemplateResponse("index1.html", context, status_code=403)
 
 
-@app.get("/admin/users/", response_model=UserListResponse)
-async def list_users(current_user: User = Depends(get_superadmin)):
-    users = list(users_collection.find({}, {"hashed_password": 0}))
-    return {"users": users}
+@app.get("/users", response_model=List[UserOut])
+async def get_all_users(current_user: UserInDB = Depends(get_superadmin)):
+    users = list(users_collection.find({}, {"_id": 0,"password": 0}))
+    return users
 
-@app.post("/admin/users/", response_model=UserInDB)
-async def create_user_admin(
-    user_data: AdminUserCreate,
-    current_user: UserInDB = Depends(get_superadmin)
-):
-    existing_user = users_collection.find_one({"$or": [{"username": user_data.username}, {"email": user_data.email}]})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username or email already registered")
+@app.post("/users", response_model=UserOut)
+async def create_user(user: UserCreate, current_user: UserInDB = Depends(get_superadmin)):
+    if users_collection.find_one({"username": user.username}):
+        raise HTTPException(status_code=400, detail="Username already exists")
     
-    hashed_password = get_password_hash(user_data.password)
-    user_dict = user_data.dict()
-    user_dict['hashed_password'] = hashed_password
+    hashed_pwd = get_password_hash(user.password)
+    user_dict = user.dict()
+    user_dict['hashed_password'] = hashed_pwd
     del user_dict['password']
-    
     users_collection.insert_one(user_dict)
-    print("______________________________________________________________________________")
     return user_dict
 
-
-@app.delete("/admin/users/{username}")
-async def delete_user(username: str, current_user: User = Depends(get_superadmin)):
-    if username == "superadmin":
-        raise HTTPException(status_code=400, detail="Cannot delete superadmin")
+@app.put("/users/{username}")
+async def update_user(username: str, user: UserUpdate, current_user: UserInDB = Depends(get_superadmin)):
+    update_data = {k: v for k, v in user.dict().items() if v is not None}
+    if "password" in update_data:
+        update_data["hashed_password"] = get_password_hash(update_data.pop("password"))
     
+    result = users_collection.update_one({"username": username}, {"$set": update_data})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"msg": "User updated successfully"}
+
+@app.delete("/users/{username}")
+async def delete_user(username: str, current_user: UserInDB = Depends(get_superadmin)):
     result = users_collection.delete_one({"username": username})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "User deleted successfully"}
+    return {"msg": "User deleted"}
+
 
 if __name__ == "__main__":
-    
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

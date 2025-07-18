@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Register - RedX VMS</title>
+    <title>Login - RedX VMS</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -45,7 +45,7 @@
             padding-left: 20px;
         }
         
-        .register-box {
+        .login-box {
             background-color: white;
             padding: 20px;
             border-radius: 8px;
@@ -73,7 +73,7 @@
             box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.2);
         }
         
-        .btn-register {
+        .btn-login {
             background-color: #d32f2f;
             color: white;
             border: none;
@@ -86,7 +86,7 @@
             margin-top: 10px;
         }
         
-        .btn-register:hover {
+        .btn-login:hover {
             background-color: #b71c1c;
         }
         
@@ -130,82 +130,29 @@
 <body>
     <div class="main-container">
         <div class="left-section">
-            <img src="https://easemyai.com/wp-content/uploads/2024/08/redx-logo-web.webp" alt="RedX Logo" class="logo-image">
+            <img src="{{ url_for('static', path='img/REDX Logo.png') }}" alt="RedX Logo" class="logo-image">
         </div>
         
         <div class="right-section">
-            <div class="register-box">
-                <div id="error-message" class="error-message"></div>
-                
-                <div class="form-group">
-                    <input type="text" id="username" placeholder="Username" required>
-                </div>
-                
-                <div class="form-group">
-                    <input type="email" id="email" placeholder="Email address" required>
-                </div>
-                
-                <div class="form-group">
-                    <input type="password" id="password" placeholder="Password" required>
-                </div>
-                
-                <div class="form-group">
-                    <input type="password" id="confirm-password" placeholder="Confirm Password" required>
-                </div>
-                
-                <button class="btn-register" onclick="register()">Register</button>
-                
+            <div class="login-box">
+                <form action="{{ url_for('login') }}" method="post">
+                    <div class="form-group">
+                        <input type="text" name="username" placeholder="Username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="password" name="password" placeholder="Password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-login">Login</button>
+                </form>
+
                 <div class="divider"></div>
-                
                 <div>
-                    Already have an account? <a href="/login" class="login-link">Log in</a>
+                    Go to <a href="/" class="login-link">home</a> page 
                 </div>
             </div>
         </div>
     </div>
-    
-    <script>
-        const localIP = '{{ local_ip }}'
-        const customHost = `http://${localIP}`
-        async function register() {
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            
-            const errorElement = document.getElementById('error-message');
-            errorElement.textContent = '';
-            
-            if (password !== confirmPassword) {
-                errorElement.textContent = 'Passwords do not match';
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${customHost}:8000/register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username: username,
-                        email: email,
-                        password: password
-                    })
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || 'Registration failed');
-                }
-                
-                const data = await response.json();
-                // Redirect to login or dashboard after successful registration
-                window.location.href = '/';
-            } catch (error) {
-                errorElement.textContent = error.message;
-            }
-        }
-    </script>
 </body>
 </html>

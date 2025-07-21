@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi_jwt_auth import AuthJWT
+from fastapi_jwt_auth.exceptions import MissingTokenError
 from datetime import datetime
 from uuid import uuid4
 from pydantic import BaseModel
@@ -25,10 +26,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://127.144.30.1:8000"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 client = MongoClient("mongodb://192.168.1.67:27017")
@@ -116,21 +118,16 @@ create_superadmin()
 def get_config():
     return Settings()
 
-async def get_current_user(Authorize: AuthJWT=Depends()):
+def get_current_user(Authorize: AuthJWT = Depends()):
     try:
-        Authorize.jwt_required()
-        username = Authorize.get_jwt_subject()
-        user_data = Authorize.get_raw_jwt()
-        role = user_data.get('role', "user")
-        user = users_collection.find_one({"username": username})
-        if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
-        return  UserInDB(**user)
+        Authorize.jwt_required() 
+    except MissingTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing access token")
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Token, Login again"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    current_user = Authorize.get_jwt_subject()
+    return current_user
     
 async def get_superadmin(Authorize: AuthJWT = Depends()):
     try:
@@ -185,21 +182,17 @@ async def login(request:Request):
     return templates.TemplateResponse("login.html", context)
 
 @app.post('/login')
-async def login(username: str=Form(...),password: str=Form(...), Authorize: AuthJWT = Depends()):
+async def login(username: str = Form(...), password: str = Form(...), Authorize: AuthJWT = Depends()):
     user = users_collection.find_one({"username": username})
-    print("user:", user)
     if not user or not verify_password(password, user['hashed_password']):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username or password')
-    
+
     access_token = Authorize.create_access_token(subject=username)
-    refresh_token = Authorize.create_refresh_token(subject=username)
-    print("Access Token:", access_token)
-    if user.get('role') == "user":
-        response = RedirectResponse(url='/', status_code=302)
-    if user.get('role') == "superadmin":
-        response = RedirectResponse(url='/admin', status_code=302)
-    Authorize.set_access_cookies(access_token, response)
+    response = RedirectResponse(url='/admin' if user['role'] == 'superadmin' else '/', status_code=302)
+
+    Authorize.set_access_cookies(access_token, response) 
     return response
+
 
 @app.get('/logout')
 def logout(Authorize: AuthJWT = Depends()):

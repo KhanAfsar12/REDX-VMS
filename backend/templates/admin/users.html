@@ -161,8 +161,7 @@
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <img src="https://easemyai.com/wp-content/uploads/2024/08/redx-logo-web.webp" alt="REDX Logo" height="30" class="me-2">
-                REDX VMS
+                <img src="{{ url_for('static', path='img/REDX Logo.png') }}" alt="REDX Logo" height="30" class="me-2">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -355,10 +354,12 @@ function handleUnauthorized() {
 // Get token from cookie
 function getCookie(name) {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  console.log(match);
   return match ? match[2] : null;
 }
 
 const token = getCookie('access_token_cookie');
+console.log(token);
 const headers = { 
   'Authorization': `Bearer ${token}`, 
   'Content-Type': 'application/json' 

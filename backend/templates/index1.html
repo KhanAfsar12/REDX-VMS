@@ -856,6 +856,20 @@
       });
     }
 
+
+    // Cookie getter function
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? match[2] : null;
+    }
+
+    // Unauthorized handler
+    function handleUnauthorized() {
+      showToast('Your session has expired. Please log in again.', 'danger');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+    }
     // Form Submission
     async function handleFormSubmit(e) {
       e.preventDefault();
@@ -893,14 +907,23 @@
     </svg>
     Processing...
   `;
-
+    const token = getCookie('access_token_cookie');
+    console.log(token);
       try {
         const response = await fetch(`${customHost}:8000/requirement/`, {
           method: "POST",
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
           credentials:"include",
           body: JSON.stringify(payload)
         });
 
+        if (response.status === 401) {
+          handleUnauthorized();
+          return;
+        }
         if (!response.ok) {
           const error = await response.json();
           throw new Error(error.detail || "Server error");

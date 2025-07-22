@@ -14,6 +14,8 @@
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/styles/ag-grid.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/styles/ag-theme-alpine.css" />
+
+
   <style>
     :root {
       --primary-color: #e63946;
@@ -36,20 +38,32 @@
     }
 
     body {
-      font-family: 'Roboto', sans-serif;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      padding: 20px;
-      min-height: 100vh;
+      background-color: #f8f9fc;
+      color: var(--text-color);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     .container {
-      max-width: 1500px;
-      margin: 20px auto;
+      margin-top: 30px;
+      max-width: 1200px;
       background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     }
+
+   .header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header-container {
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 10px;
+}
+
+.create-user {
+  margin-left: 20px; /* Adds some spacing between title and button */
+}
 
     .header {
       display: flex;
@@ -87,9 +101,8 @@
     h1 {
       font-size: 28px;
       font-weight: 700;
-      border-bottom: 2px solid var(--primary-color);
       padding-bottom: 10px;
-      margin-bottom: 30px;
+      margin-bottom: 10px;
     }
 
     h2 {
@@ -485,30 +498,41 @@
 </head>
 
 <body>
-  <div class="container">
-    <div class="button">
-      {% if is_authenticated %}
-      <div class="d-flex align-items-center" style="margin-bottom: 10px;">
-        <span class="me-3 text-muted" id="currentUser"></span>
-        <a href="{{ url_for('logout') }}">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <img src="{{ url_for('static', path='img/REDX Logo.png') }}" alt="REDX Logo" height="30" class="me-2">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">Home</a>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center">
+          <span class="me-3 text-muted" id="currentUser"></span>
           <button class="btn btn-outline-danger" id="logoutBtn">
             <i class="bi bi-box-arrow-right"></i> Logout
           </button>
-        </a>
+        </div>
       </div>
-      {% else %}
-      <div class="d-flex align-items-center" style="margin-bottom: 10px;">
-        <span class="me-3 text-muted" id="currentUser"></span>
-        <a href="{{ url_for('login') }}">
-          <button class="btn btn-outline-danger" id="logoutBtn">
-            <i class="bi bi-box-arrow-in-right"></i> Login
-          </button>
-        </a>
-      </div>
-      {% endif %}
     </div>
+  </nav>
+  <div class="container">
+
+
+<div class="header-container">
+  <div class="title-wrapper">
     <h1>REDX VMS Requirement Portal</h1>
-    
+  </div>
+  <div class="create-user">
+    <button id="createUserBtn" class="btn-secondary">Admin Dashboard</button>
+  </div>
+</div>
+
 
     <div class="tab-btns">
       <button class="btn-primary" onclick="showCreateForm()">
@@ -518,7 +542,7 @@
         </svg>
         Create New Entry
       </button>
-      <button class="btn-secondary" onclick="loadHistory()">
+      <button class="btn-secondary" onclick="loadHistory()" id="history-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
           <path
             d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.27l.493-.87a8.025 8.025 0 0 1 .979.654l-.615.789a6.996 6.996 0 0 0-.418-.302zm1.834 1.79a6.99 6.99 0 0 0-.653-.796l.724-.69c.27.285.52.59.747.91l-.818.576zm.744 1.352a7.08 7.08 0 0 0-.214-.468l.893-.45a7.976 7.976 0 0 1 .45 1.088l-.95.313a7.023 7.023 0 0 0-.179-.483zm.53 2.507a6.991 6.991 0 0 0-.1-1.025l.985-.17c.067.386.106.778.116 1.17l-1 .025zm-.131 1.538c.033-.17.06-.339.081-.51l.993.123a7.957 7.957 0 0 1-.23 1.155l-.964-.267c.046-.165.086-.332.12-.501zm-.952 2.379c.184-.29.346-.594.486-.908l.914.405c-.16.36-.345.706-.555 1.038l-.845-.535zm-.964 1.205c.122-.122.239-.248.35-.378l.758.653a8.073 8.073 0 0 1-.401.432l-.707-.707z" />
@@ -628,9 +652,6 @@
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"
           id="exportAllBtn">
-          <div class="create-user">
-            <button id="createUserBtn" class="btn-secondary">Create user</button>
-          </div>
           <h2>Submission History</h2>
           <div class="export-actions">
             <button class="btn-outline" onclick="exportAllData()">
@@ -665,10 +686,20 @@
     </div>
   </div>
 
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
     const localIP = '{{ local_ip }}';
     const customHost = `http://${localIP}`;
     console.log(localIP);
+    const role = localStorage.getItem('role');
+
+    const historyContainer = document.getElementById('history-btn');
+    if(role === 'user'){
+      historyContainer.style.display = 'none';
+    }
+
 
     const codecOptions = ["H264", "H264+", "H265", "H265+"];
     const resolutionOptions = [
@@ -697,6 +728,103 @@
     let gridApi = null;
     let allRowData = [];
     let currentSearchTerm = "";
+
+    // Get JWT token from localStorage
+    function getToken() {
+      return localStorage.getItem('access_token');
+    }
+
+    // Handle unauthorized access
+    function handleUnauthorized() {
+      showToast('Your session has expired. Please log in again.', 'danger');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+    }
+
+    // Handle logout
+    function handleLogout() {
+      localStorage.removeItem('access_token');
+      window.location.href = '/login';
+    }
+
+    // Check authentication status
+    function checkAuth() {
+      const token = getToken();
+      const logoutBtn = document.getElementById('logoutBtn');
+      const currentUserSpan = document.getElementById("currentUser");
+
+      if (token) {
+        // User is authenticated
+        logoutBtn.innerHTML = '<i class="bi bi-box-arrow-right"></i> Logout';
+        logoutBtn.onclick = handleLogout;
+
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          if (payload.sub) {
+            currentUserSpan.textContent = `Logged in as ${payload.sub}`;
+          }
+        }
+        catch (e) {
+          console.error("Error decoding token", e);
+        }
+
+      } else {
+        // User is not authenticated
+        logoutBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Login';
+        logoutBtn.onclick = () => window.location.href = '/login';
+        currentUserSpan.textContent = '';
+      }
+    }
+
+    // Generic function for authenticated API requests
+    async function makeAuthenticatedRequest(url, method = 'GET', body = null) {
+      const token = getToken();
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      try {
+        const options = {
+          method,
+          headers
+        };
+
+        if (body) {
+          options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(url, options);
+
+        if (response.status === 401) {
+          showToast('Your session has expired. Please login again.', 'error');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+          return null;
+        }
+
+        if (response.status === 403) {
+          const error = await response.json();
+          showToast(error.detail || 'You do not have permission to access this resource', 'error');
+          return null;
+        }
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || "Request failed");
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("API request error:", error);
+        showToast(error.message || "Request failed", "error");
+        return null;
+      }
+    }
 
     // Camera Configuration Functions
     function calculateBitrate(resolution, fps, codec, qualityFactor = 1) {
@@ -759,50 +887,50 @@
       });
 
       row.innerHTML = `
-    <td></td>
-    <td>
-      <select data-field='resolution' class='small-input'>
-        ${resolutionOptions.map(opt =>
+        <td></td>
+        <td>
+          <select data-field='resolution' class='small-input'>
+            ${resolutionOptions.map(opt =>
         `<option value="${opt}" ${data.resolution === opt ? 'selected' : ''}>${opt}</option>`
       ).join('')}
-      </select>
-    </td>
-    <td>
-      <input class='small-input' type='number' data-field='fps' min="1" max="60" 
-            value='${data.fps || 15}' />
-    </td>
-    <td>
-      <select data-field='codec' class='small-input'>
-        ${codecOptions.map(opt =>
+          </select>
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='fps' min="1" max="60" 
+                value='${data.fps || 15}' />
+        </td>
+        <td>
+          <select data-field='codec' class='small-input'>
+            ${codecOptions.map(opt =>
         `<option value="${opt}" ${data.codec === opt ? 'selected' : ''}>${opt}</option>`
       ).join('')}
-      </select>
-    </td>
-    <td>
-      <input class='small-input' type='number' data-field='record_hour' 
-            min="1" max="24" value='${data.record_hour || 1}' />
-    </td>
-    <td>
-      <input class='small-input' type='number' data-field='retention_days' min="1" 
-            value='${data.retention_days || 30}' />
-    </td>
-    <td>
-      <input class='small-input' type='number' data-field='qty' min="1" 
-            value='${data.qty || 1}' />
-    </td>
-    <td>
-      <input class='small-input' type='number' data-field='bitrate_kbps' min="100" 
-            value='${data.bitrate_kbps || ""}' placeholder="Auto" />
-    </td>
-    <td>
-      <button type='button' class="btn-danger" onclick='removeRow(this)'>
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-          <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-        </svg>
-      </button>
-    </td>
-  `;
+          </select>
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='record_hour' 
+                min="1" max="24" value='${data.record_hour || 1}' />
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='retention_days' min="1" 
+                value='${data.retention_days || 30}' />
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='qty' min="1" 
+                value='${data.qty || 1}' />
+        </td>
+        <td>
+          <input class='small-input' type='number' data-field='bitrate_kbps' min="100" 
+                value='${data.bitrate_kbps || ""}' placeholder="Auto" />
+        </td>
+        <td>
+          <button type='button' class="btn-danger" onclick='removeRow(this)'>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+          </button>
+        </td>
+      `;
 
       row.children[0].appendChild(brandSelect);
       tbody.appendChild(row);
@@ -857,19 +985,46 @@
     }
 
 
-    // Cookie getter function
-    function getCookie(name) {
-      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-      return match ? match[2] : null;
-    }
+    document.getElementById('createUserBtn').addEventListener('click', async () => {
+      const token = getToken();
 
-    // Unauthorized handler
-    function handleUnauthorized() {
-      showToast('Your session has expired. Please log in again.', 'danger');
-      setTimeout(() => {
+      if (!token) {
+        showToast("Please login first", "error");
         window.location.href = '/login';
-      }, 2000);
-    }
+        return;
+      }
+
+      try {
+        const userInfo = await makeAuthenticatedRequest(`${customHost}:8000/protected`);
+        if (!userInfo) return;
+        const response = await fetch('/admin', {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        if (response.ok) {
+          const html = await response.text();
+          document.open();
+          document.write(html);
+          document.close();
+        } else if (response.status === 403) {
+          const error = await response.json();
+          showToast(error.detail || "Access denied. Only superadmin can view this page", "error");
+        } else if (response.status === 401) {
+          showToast("You are not authorized. Please login", "error");
+          window.location.href = '/login';
+        } else {
+          showToast("Something went wrong.", "error");
+        }
+
+      } catch (error) {
+        console.error("Error fetching admin page:", error);
+        showToast("Failed to load admin dashboard.", "error");
+      }
+    });
+
     // Form Submission
     async function handleFormSubmit(e) {
       e.preventDefault();
@@ -901,41 +1056,25 @@
       const submitBtn = document.querySelector("button[type='submit']");
       submitBtn.disabled = true;
       submitBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="spin">
-      <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
-      <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
-    </svg>
-    Processing...
-  `;
-    const token = getCookie('access_token_cookie');
-    console.log(token);
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="spin">
+          <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+          <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+        </svg>
+        Processing...
+      `;
+
       try {
-        const response = await fetch(`${customHost}:8000/requirement/`, {
-          method: "POST",
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          credentials:"include",
-          body: JSON.stringify(payload)
-        });
+        const data = await makeAuthenticatedRequest(
+          `${customHost}:8000/requirement/`,
+          'POST',
+          payload
+        );
 
-        if (response.status === 401) {
-          handleUnauthorized();
-          return;
+        if (data) {
+          latestID = data.id;
+          showSummary(data);
+          showToast("Requirement submitted successfully", "success");
         }
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.detail || "Server error");
-        }
-
-        const data = await response.json();
-        latestID = data.id;
-        showSummary(data);
-        showToast("Requirement submitted successfully", "success");
-      } catch (error) {
-        console.error("Error submitting form:", error);
-        showToast(error.message || "Error submitting requirement", "error");
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = `Submit Requirement`;
@@ -946,28 +1085,28 @@
       const formatServerSpec = (spec) => {
         if (!spec) return "N/A";
         return `
-      CPU: ${spec.cpu || 'N/A'},
-      RAM: ${spec.ram_gb || 'N/A'} GB,
-      HDD-(OS): ${spec.hdd_tb || 'N/A'} TB,
-      NIC: ${spec.nic || 'N/A'},
-    `.replace(/\s+/g, ' ').trim();
+          CPU: ${spec.cpu || 'N/A'},
+          RAM: ${spec.ram_gb || 'N/A'} GB,
+          HDD-(OS): ${spec.hdd_tb || 'N/A'} TB,
+          NIC: ${spec.nic || 'N/A'},
+        `.replace(/\s+/g, ' ').trim();
       };
 
       const summary = document.getElementById("summary");
       summary.classList.remove("hidden");
 
       document.getElementById("summary-content").innerHTML = `
-    <p><strong>Customer:</strong> ${data.customer_name}</p>
-    <p><strong>Project:</strong> ${data.project_name}</p>
-    <p><strong>Location:</strong> ${data.location || "-"}</p>
-    <p><strong>Assigned To:</strong> ${data.assigned_person || "-"}</p>
-    <p><strong>Total Cameras:</strong> ${data.camera_configs.reduce((a, c) => a + (c.qty || 1), 0)}</p>
-    <p><strong>Total Bandwidth:</strong> ${data.bandwidth || "N/A"} Mbps</p>
-    <p><strong>Total Recording Storage:</strong> ${data.storage_tb || "N/A"} TB</p>
-    <p><strong>Submission ID:</strong> ${data.id}</p>
-    <p><strong>Server:</strong> ${formatServerSpec(data.server_spec)}</p>
-    <p><strong>Date:</strong> ${new Date(data.created_at || Date.now()).toLocaleString()}</p>
-  `;
+        <p><strong>Customer:</strong> ${data.customer_name}</p>
+        <p><strong>Project:</strong> ${data.project_name}</p>
+        <p><strong>Location:</strong> ${data.location || "-"}</p>
+        <p><strong>Assigned To:</strong> ${data.assigned_person || "-"}</p>
+        <p><strong>Total Cameras:</strong> ${data.camera_configs.reduce((a, c) => a + (c.qty || 1), 0)}</p>
+        <p><strong>Total Bandwidth:</strong> ${data.bandwidth || "N/A"} Mbps</p>
+        <p><strong>Total Recording Storage:</strong> ${data.storage_tb || "N/A"} TB</p>
+        <p><strong>Submission ID:</strong> ${data.id}</p>
+        <p><strong>Server:</strong> ${formatServerSpec(data.server_spec)}</p>
+        <p><strong>Date:</strong> ${new Date(data.created_at || Date.now()).toLocaleString()}</p>
+      `;
     }
 
     // History Functions
@@ -1084,7 +1223,6 @@
       document.getElementById("history-section").classList.remove("hidden");
 
       try {
-
         const gridDiv = document.querySelector('#historyGrid');
         gridDiv.innerHTML = '';
 
@@ -1095,23 +1233,9 @@
           url = `${customHost}:8000/requirement/search/?query=${encodeURIComponent(searchTerm)}`;
         }
 
-        const response = await fetch(url);
+        const data = await makeAuthenticatedRequest(url);
+        if (!data) return;
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          if (response.status === 403) {
-            document.querySelector('#historyGrid').innerHTML = `
-                <div style="padding: 20px; text-align: center; color: red;">
-                  🚫 You do not have permission to view this section. Super Admin access is required.
-                </div>
-              `;
-            return;
-          }
-          throw new Error("Failed to load history");
-        }
-
-
-        const data = await response.json();
         const results = searchTerm ? data.results : data;
 
         if (results.length === 0) {
@@ -1129,10 +1253,10 @@
         console.error("Error loading history:", error);
         const gridDiv = document.querySelector('#historyGrid');
         gridDiv.innerHTML = `
-      <div style="padding: 20px; text-align: center; color: var(--danger-color);">
-        Error loading history: ${error.message}<br>
-      </div>
-    `;
+          <div style="padding: 20px; text-align: center; color: var(--danger-color);">
+            Error loading history: ${error.message}<br>
+          </div>
+        `;
       }
     }
 
@@ -1161,12 +1285,8 @@
 
     async function loadEntry(id) {
       try {
-        const response = await fetch(`${customHost}:8000/requirement/${id}`);
-        if (!response.ok) {
-          throw new Error("Failed to load entry");
-        }
-
-        const data = await response.json();
+        const data = await makeAuthenticatedRequest(`${customHost}:8000/requirement/${id}`);
+        if (!data) return;
 
         document.getElementById("customer_name").value = data.customer_name || "";
         document.getElementById("project_name").value = data.project_name || "";
@@ -1215,21 +1335,28 @@
       }
     }
 
-    // Export Functions
-    async function handlePdfExport(id) {
-      const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf`;
+    function handlePdfExport(id) {
+      const token = localStorage.getItem('access_token');
 
-      const newWindow = window.open(pdfUrl, '_blank');
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-        showToast("Popup blocked. Please allow popups for this site.", "warning");
-
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      if (!token) {
+        showToast("Please login first", "error");
+        return;
       }
+      const encodedToken = encodeURIComponent(token);
+      const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf?token=${encodedToken}`;
+      const newWindow = window.open(pdfUrl, '_blank');
+
     }
+
+    // Update your PDF button event listener
+    document.getElementById("pdfBtn").addEventListener("click", function () {
+      if (latestID) {
+        handlePdfExport(latestID);
+      } else {
+        showToast("No submission to export", "warning");
+      }
+    });
+
 
     function handlePdfDownload() {
       if (latestID) {
@@ -1240,72 +1367,119 @@
     }
 
     async function exportAllData() {
-      try {
-        const exportBtn = document.querySelector("#exportFilteredBtn");
+    try {
+        const exportBtn = document.querySelector("#exportAllBtn button");
         exportBtn.disabled = true;
         exportBtn.innerHTML = "Exporting...";
 
-        const url = `${customHost}:8000/requirement/export/all/xlsx`;
+        const searchTerm = document.getElementById("searchInput").value;
+        let url = `${customHost}:8000/requirement/export/all/xlsx`;
 
-        const response = await fetch(url);
+        // Add query parameters if they exist
+        const params = new URLSearchParams();
+        if (searchTerm) params.append('query', searchTerm);
+        
+        if (params.toString()) {
+            url += `?${params.toString()}`;
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
 
         if (!response.ok) {
-          throw new Error('Export failed');
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Export failed');
+        }
+
+        // Get filename from content-disposition header or create one
+        const contentDisposition = response.headers.get('content-disposition');
+        let filename = 'redx_all_requirements.xlsx';
+        
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1];
+            }
         }
 
         const blob = await response.blob();
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = downloadUrl;
-        a.download = `redx_all_requirements_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(downloadUrl);
         a.remove();
 
         showToast("All data exported successfully", "success");
-      } catch (error) {
+    } catch (error) {
         console.error("Export error:", error);
         showToast(error.message || "Error exporting all data", "error");
-      } finally {
-        const exportBtn = document.querySelector("#exportFilteredBtn");
+    } finally {
+        const exportBtn = document.querySelector("#exportAllBtn button");
         if (exportBtn) {
-          exportBtn.disabled = false;
-          exportBtn.innerHTML = "Export All";
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = "Export All";
         }
-      }
     }
+}
 
-    async function exportFilteredData() {
-      try {
+async function exportFilteredData() {
+    try {
         const exportBtn = document.querySelector("#exportFilteredBtn");
         exportBtn.disabled = true;
         exportBtn.innerHTML = "Exporting...";
 
         const searchTerm = document.getElementById("searchInput").value;
-
-        let url = `${customHost}:8000/requirement/export/filtered/xlsx`;
-        if (searchTerm) {
-          url += `?query=${encodeURIComponent(searchTerm)}`;
+        const token = getToken();
+        if (!token) {
+            throw new Error("Please login first");
         }
+        let url = new URL(`${customHost}:8000/requirement/export/filtered/xlsx`);
 
-        const response = await fetch(url);
+        // Add query parameters
+        const params = new URLSearchParams();
+        if (searchTerm) params.append('query', searchTerm);
+        params.append('token', token);
+
+        url.search = params.toString();
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
         if (!response.ok) {
-          throw new Error('Export failed');
+            // Try to parse error details
+            let errorMsg = 'Export failed';
+            try {
+                const errorData = await response.json();
+                errorMsg = errorData.detail || errorMsg;
+            } catch (e) {
+                console.error("Error parsing error response:", e);
+            }
+            throw new Error(errorMsg);
         }
 
         const blob = await response.blob();
+        const contentDisposition = response.headers.get('content-disposition');
+        let filename = 'redx_report.xlsx'
+
+        if(contentDisposition){
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          if(filenameMatch && filenameMatch[1]){
+            filename = filenameMatch[1];
+          }
+        }
+
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = downloadUrl;
-
-        let filename = 'redx_filtered_requirements';
-        if (searchTerm) {
-          filename += `_${searchTerm.substring(0, 20)}`;
-        }
-        filename += `_${new Date().toISOString().slice(0, 10)}.xlsx`;
-
         a.download = filename;
         document.body.appendChild(a);
         a.click();
@@ -1313,17 +1487,23 @@
         a.remove();
 
         showToast("Filtered data exported successfully", "success");
-      } catch (error) {
+    } catch (error) {
         console.error("Export error:", error);
         showToast(error.message || "Error exporting filtered data", "error");
-      } finally {
+    } finally {
         const exportBtn = document.querySelector("#exportFilteredBtn");
         if (exportBtn) {
-          exportBtn.disabled = false;
-          exportBtn.innerHTML = "Export Filtered";
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                </svg>
+                Export Filtered
+            `;
         }
-      }
     }
+}
 
     function downloadJSON() {
       const data = {
@@ -1402,7 +1582,7 @@
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function () {
-      // Camera configuration functions
+      checkAuth();
       addRow();
       document.getElementById("pdfBtn").addEventListener("click", handlePdfDownload);
       document.getElementById("searchInput").addEventListener("keyup", function (event) {
@@ -1415,14 +1595,14 @@
     // Add spin animation for loading states
     const style = document.createElement('style');
     style.textContent = `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  .spin {
-    animation: spin 1s linear infinite;
-  }
-`;
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .spin {
+        animation: spin 1s linear infinite;
+      }
+    `;
     document.head.appendChild(style);
   </script>
 </body>

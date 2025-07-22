@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import MissingTokenError
+from fastapi_jwt_auth.exceptions import MissingTokenError, JWTDecodeError
 from datetime import datetime
 from uuid import uuid4
 from pydantic import BaseModel
@@ -145,11 +145,17 @@ async def get_superadmin(Authorize: AuthJWT = Depends()):
             )
             
         return UserInDB(**user)
-        
-    except Exception as e:
+    
+    except MissingTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Token, Login again"
+            detail="Please login to access this page"
+        )
+        
+    except JWTDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Your session has expired. Please login again."
         )
 
 
@@ -188,22 +194,21 @@ async def login(username: str = Form(...), password: str = Form(...), Authorize:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username or password')
 
     access_token = Authorize.create_access_token(subject=username)
-    response = RedirectResponse(url='/admin' if user['role'] == 'superadmin' else '/', status_code=302)
-
-    Authorize.set_access_cookies(access_token, response) 
-    return response
+    return {
+        "access_token": access_token,
+        "role": user.get('role'),
+        "token_type": "bearer",
+        "redirect_url": "/" if user['role'] == 'superadmin' else '/'
+    }
 
 
 @app.get('/logout')
-def logout(Authorize: AuthJWT = Depends()):
-    response = RedirectResponse(url='/', status_code=302)
-    Authorize.unset_jwt_cookies(response)
-    return response
-
+def logout():
+    return {"msg": "Successfully logged out"}
 
 @app.get('/protected')
 async def protected_route(current_user: User = Depends(get_current_user)):
-    return {"message": f"Hello {current_user.username}", "role": f"Your role is {current_user.role}"}
+    return {"message": f"Hello {current_user}"}
 
 @app.get('/admin-only')
 async def admin_route(superadmin: User = Depends(get_superadmin)):
@@ -214,14 +219,10 @@ async def admin_route(superadmin: User = Depends(get_superadmin)):
 def home(request: Request):
 
     print("local_ip:", local_ip)
-    is_authenticated = False
-    if request.cookies.get("access_token_cookie"):
-        print(request.cookies.get("access_token_cookie"))
-        is_authenticated = True
     context = {
         "request": request,
         "local_ip": local_ip,
-        "is_authenticated": is_authenticated
+        "is_authenticated":""
     }
     return templates.TemplateResponse("index1.html", context)
 
@@ -353,7 +354,6 @@ async def export_pdf(
 
 @app.get("/requirement/list/")
 def list_all_requirements(current_user: User = Depends(get_superadmin)):
-    print(current_user, "[[[[[[[[[[[[[]]]]]]]]]]]]]")
     results = []
     for doc in collection.find().sort("created_at", -1):
         total_qty = sum(cam.get("qty", 1) for cam in doc.get('camera_configs', []))
@@ -372,9 +372,18 @@ def list_all_requirements(current_user: User = Depends(get_superadmin)):
 
 
 @app.get("/requirement/export/all/xlsx")
-def export_all_excel(token: str = Query(..., description="JWT token for authentication"), Authorize: AuthJWT = Depends()):
+def export_all_excel(
+    Authorize: AuthJWT = Depends(),
+    query: str = Query(None),
+    customer_name: str = Query(None),
+    project_name: str = Query(None),
+    location: str = Query(None),
+    assigned_person: str = Query(None),
+    start_date: datetime = Query(None),
+    end_date: datetime = Query(None)
+):
     try:
-        Authorize.jwt_required("access", token=token)
+        Authorize.jwt_required()
         current_user = Authorize.get_jwt_subject()
         
         docs = list(collection.find())
@@ -409,68 +418,47 @@ def export_all_excel(token: str = Query(..., description="JWT token for authenti
                     cam["qty"]
                 ])
 
-        path = os.path.join(EXPORT_DIR, f"all_requirements.xlsx")
+        filename = f"redx_all_requirements_{datetime.now().strftime('%Y%m%d')}.xlsx"
+        path = os.path.join(EXPORT_DIR, filename)
         wb.save(path)
-        return FileResponse(path, filename=f"redx_all_requirements.xlsx", headers={"Content-Dispostion": f"attachment; filename=redx_all_requirements.xlsx"})
-    except Exception as e:
-        raise  HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized access'
+        
+        return FileResponse(
+            path,
+            filename=filename,
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
-
-
-@app.get("/requirement/search/")
-def search_requirements(
-    query: str = Query(None, description="Search term to match across fields"),
-    customer_name: str = Query(None, description="Filter by customer name"),
-    project_name : str = Query(None, description='Filter by project name'),
-    location: str = Query(None, description="Filter by location"),
-    assigned_person : str = Query(None, description="Filter by assigned person"),
-    start_date : datetime = Query(None, description="Start date created_at filter"),
-    end_date : datetime = Query(None, description="End date at created at filter"),
-):
-    search_filter = build_search_filter(
-        query=query,
-        customer_name=customer_name,
-        project_name=project_name,
-        location=location,
-        assigned_person=assigned_person,
-        start_date=start_date,
-        end_date=end_date
-    )
-    print("search_filter:", search_filter)
-    results = []
-    for doc in collection.find(search_filter).sort("created_at", -1):
-        results.append({
-            "id": str(doc["_id"]),
-            "project_name": doc["project_name"],
-            "customer_name": doc["customer_name"],
-            "location": doc.get("location", ""),
-            "assigned_person": doc.get("assigned_person", ""),
-            "created_at": doc.get("created_at", "")
-        })
-
-    return {
-        "count": len(results),
-        "results": results
-    }
-
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @app.get("/requirement/export/filtered/xlsx")
 def export_filtered_excel(
-    query: str = Query(None, description="Search term to match across fields"),
-    customer_name: str = Query(None, description="Filter by customer name"),
-    project_name: str = Query(None, description="Filter by project name"),
-    location: str = Query(None, description="Filter by location"),
-    assigned_person: str = Query(None, description="Filter by assigned person"),
-    start_date: datetime = Query(None, description="Start date for created_at filter"),
-    end_date: datetime = Query(None, description="End date for created_at filter"),
-    token: str = Query(..., description="JWT token for authentication"),
+    request: Request,
+    query: str = Query(None),
+    customer_name: str = Query(None),
+    project_name: str = Query(None),
+    location: str = Query(None),
+    assigned_person: str = Query(None),
+    start_date: str = Query(None),
+    end_date: str = Query(None),
     Authorize: AuthJWT = Depends()
 ):
     try:
-        Authorize.jwt_required("access", token=token)
-        current_user = Authorize.get_jwt_subject()
+        try:
+            Authorize.jwt_required()
+        except:
+            token = request.query_params.get("token")
+            if token:
+                Authorize.jwt_required("access", token=token)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail='Missing Token'
+                )
+        start_date_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
+        end_date_dt = datetime.strptime(end_date, "%Y-%m-%d") if end_date else None
             
         search_filter = build_search_filter(
             query=query,
@@ -478,8 +466,8 @@ def export_filtered_excel(
             project_name=project_name,
             location=location,
             assigned_person=assigned_person,
-            start_date=start_date,
-            end_date=end_date
+            start_date=start_date_dt,
+            end_date=end_date_dt
         )
 
         docs = list(collection.find(search_filter).sort("created_at", -1))
@@ -551,11 +539,16 @@ def export_filtered_excel(
         os.makedirs(EXPORT_DIR, exist_ok=True)
         wb.save(path)
         
-        return FileResponse(path, filename=filename)
+        return FileResponse(path, filename=filename, headers={"Content-Disposition": f"attachment; filename={filename}"})
+    
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=f"Invalid date format. Use YYYY-MM-DD: {str(e)}")
+    
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Export Failed: {str(e)}"
         )
+
 
 
 @app.get('/admin', response_class=HTMLResponse)
@@ -567,22 +560,43 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
         user = users_collection.find_one({"username": current_user.username})
         print(user,  type(user))
         if not user or user.get("role") != "superadmin":
-            raise HTTPException(status_code=403, detail="Superadmin access required")
+            context = {
+                "request": request,
+                "local_ip": local_ip,
+                "error": "You need superadmin privileges to access this page"
+            }
+            return templates.TemplateResponse("admin/users.html", context, status_code=403)
         
         context = {
             "request": request,
-            "local_ip": local_ip
+            "local_ip": local_ip,
         }
         return templates.TemplateResponse("admin/users.html", context)
         
+    except HTTPException as e:
+        # Handle the case where the user is not authenticated
+        if e.status_code == status.HTTP_401_UNAUTHORIZED:
+            context = {
+                "request": request,
+                "error": "Please login to access this page",
+                "local_ip": local_ip
+            }
+            return templates.TemplateResponse("index1.html", context, status_code=401)
+        # Handle other cases
+        context = {
+            "request": request,
+            "error": str(e.detail),
+            "local_ip": local_ip
+        }
+        return templates.TemplateResponse("index1.html", context, status_code=e.status_code)
     except Exception as e:
         print(f"Admin dashboard error: {str(e)}")
         context = {
             "request": request,
-            "error": "You need to login as superadmin to access this page",
+            "error": "An error occurred while accessing this page",
             "local_ip": local_ip
         }
-        return templates.TemplateResponse("index1.html", context, status_code=403)
+        return templates.TemplateResponse("index1.html", context, status_code=500)
 
 
 @app.get("/users", response_model=List[UserOut])

@@ -135,7 +135,7 @@
         
         <div class="right-section">
             <div class="login-box">
-                <form action="{{ url_for('login') }}" method="post">
+                <form id="login-form">
                     <div class="form-group">
                         <input type="text" name="username" placeholder="Username" required>
                     </div>
@@ -147,6 +147,8 @@
                     <button type="submit" class="btn-login">Login</button>
                 </form>
 
+                <div id="error-message" class="error-message"></div>
+
                 <div class="divider"></div>
                 <div>
                     Go to <a href="/" class="login-link">home</a> page 
@@ -154,5 +156,39 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error("Invalid credentials");
+                }
+
+                const data = await response.json();
+
+                // ✅ Save token to localStorage
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('role', data.role);
+
+                // ✅ Redirect user based on role
+                window.location.href = data.redirect_url;
+
+            } catch (err) {
+                errorMessage.textContent = err.message || 'Login failed';
+            }
+        });
+    </script>
 </body>
 </html>

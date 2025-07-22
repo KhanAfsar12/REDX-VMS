@@ -171,17 +171,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/">Home</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/admin">User Management</a>
-                    </li>
                 </ul>
                 <div class="d-flex align-items-center">
                     <span class="me-3 text-muted" id="currentUser"></span>
-                    <a href="{{ url_for('logout') }}">
                     <button class="btn btn-outline-danger" id="logoutBtn">
                         <i class="bi bi-box-arrow-right"></i> Logout
                     </button>
-                    </a>
                 </div>
             </div>
         </div>
@@ -333,6 +328,7 @@ const usersPerPage = 10;
 let sortField = 'username';
 let sortDirection = 'asc';
 let searchQuery = '';
+let token = localStorage.getItem('access_token');
 
 // DOM elements
 const userTableBody = document.getElementById('userTableBody');
@@ -340,40 +336,70 @@ const pagination = document.getElementById('pagination');
 const searchInput = document.getElementById('searchInput');
 const sortIcons = document.querySelectorAll('.sort-icon');
 const successToast = new bootstrap.Toast(document.getElementById('successToast'));
+const logoutBtn = document.getElementById('logoutBtn');
+const currentUserSpan = document.getElementById('currentUser');
 
-
-function handleUnauthorized() {
-  showToast('Your session has expired. Please log in again.', 'danger');
-  setTimeout(() => {
-    window.location.href = '/'; // Redirect to home page after showing toast
-  }, 2000);
-}
-
-
-
-// Get token from cookie
-function getCookie(name) {
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-  console.log(match);
-  return match ? match[2] : null;
-}
-
-const token = getCookie('access_token_cookie');
-console.log(token);
+// Headers for API requests
 const headers = { 
   'Authorization': `Bearer ${token}`, 
   'Content-Type': 'application/json' 
 };
+
+// Handle unauthorized access
+function handleUnauthorized() {
+  showToast('Your session has expired. Please log in again.', 'danger');
+  setTimeout(() => {
+    localStorage.removeItem('access_token');
+    window.location.href = '/login';
+  }, 2000);
+}
+
+// Logout function
+logoutBtn.addEventListener('click', async () => {
+  try {
+    const response = await fetch('/logout', {
+      method: 'GET',
+      headers
+    });
+    
+    localStorage.removeItem('access_token');
+    window.location.href = '/login';
+  } catch (error) {
+    console.error('Error logging out:', error);
+    showToast('Error logging out', 'danger');
+  }
+});
+
+// Fetch current user info
+async function fetchCurrentUser() {
+  try {
+    const response = await fetch('/protected', { headers });
+    
+    if (response.status === 401) {
+      handleUnauthorized();
+      return;
+    }
+    
+    if (!response.ok) throw new Error('Failed to fetch current user');
+    
+    const userData = await response.json();
+    currentUserSpan.textContent = `Logged in as: ${userData.message.split(' ')[1]}`;
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    handleUnauthorized();
+  }
+}
 
 // Fetch users from API
 async function fetchUsers() {
   try {
     const response = await fetch('/users', { headers });
 
-    if(response.status === 401){
+    if(response.status === 401) {
       handleUnauthorized();
       return;
     }
+    
     if (!response.ok) throw new Error('Failed to fetch users');
     
     users = await response.json();
@@ -649,7 +675,13 @@ function showToast(message, type = 'success') {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  // Check if token exists
+  if (!token) {
+    window.location.href = '/login';
+    return;
+  }
   
+  fetchCurrentUser();
   fetchUsers();
   
   // Add event listener for modal hidden event to reset forms

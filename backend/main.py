@@ -233,15 +233,14 @@ def create_requirement(req: RequirementRequest, current_user: User = Depends(get
         update_bitrate(req)
 
         uid = str(uuid4())
-
+        bandwidth = 0
         for cam in req.camera_configs:
             if cam.bitrate_kbps:
                 bitrate_mbps = cam.bitrate_kbps / 1000
             else:
                 bitrate_mbps = estimate_bitrate(cam.resolution, cam.fps, cam.codec)         
             total_bitrate = bitrate_mbps * cam.qty
-
-        print("TOtal Bitrate:", total_bitrate)
+            bandwidth+= total_bitrate
 
         max_retention = max(c.retention_days for c in req.camera_configs)
         avg_record_hour = max(c.record_hour for c in req.camera_configs)
@@ -254,7 +253,7 @@ def create_requirement(req: RequirementRequest, current_user: User = Depends(get
             "assigned_person": req.assigned_person,
             "camera_configs": camera_configs,
             "created_at": datetime.utcnow(),
-            "bandwidth": round(total_bitrate, 2),
+            "bandwidth": bandwidth,
             "storage_tb": calculate_storage(total_bitrate, max_retention, avg_record_hour), 
             "server_spec": recommend_server(sum(cam.qty for cam in req.camera_configs), total_bitrate, round(total_bitrate, 2), max_retention, avg_record_hour, camera_configs)
         }

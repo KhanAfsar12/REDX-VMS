@@ -178,11 +178,10 @@
 
                 const data = await response.json();
 
-                // ✅ Save token to localStorage
                 localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem("refresh_token", data.refresh_token);
                 localStorage.setItem('role', data.role);
 
-                // ✅ Redirect user based on role
                 window.location.href = data.redirect_url;
 
             } catch (err) {

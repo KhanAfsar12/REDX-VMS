@@ -10,8 +10,12 @@ from jose import JWTError, jwt
 
 class Settings(BaseModel):
     authjwt_secret_key: str = "afsarkhan$$@#656"
-    authjwt_access_token_expires: timedelta = timedelta(minutes=10)
+    authjwt_access_token_expires: timedelta = timedelta(minutes=1)
+    authjwt_refresh_token_expires: timedelta = timedelta(days=7)
     authjwt_token_location: set = {"headers"}
+    authjwt_refresh_token_enabled: bool = True
+    authjwt_cookie_secure: bool = False
+    authjwt_cookie_csrf_protect: bool = False
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated="auto")
 

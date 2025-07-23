@@ -123,9 +123,21 @@ def get_current_user(Authorize: AuthJWT = Depends()):
         Authorize.jwt_required() 
     except MissingTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing access token")
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-
+    except JWTDecodeError:
+        try:
+            Authorize.jwt_refresh_token_required()
+            current_user = Authorize.get_jwt_subject()
+            new_access_token = Authorize.create_access_token(subject=current_user)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Token Refresh',
+                headers={"X-New-Access-Token": new_access_token}
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid Token. Please login again.'
+            )
     current_user = Authorize.get_jwt_subject()
     return current_user
     
@@ -153,11 +165,20 @@ async def get_superadmin(Authorize: AuthJWT = Depends()):
         )
         
     except JWTDecodeError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Your session has expired. Please login again."
-        )
-
+        try:
+            Authorize.jwt_refresh_token_required()
+            current_user = Authorize.get_jwt_subject()
+            new_access_token = Authorize.create_access_token(subject=current_user)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token refreshed",
+                headers={"X-New-Access-Token": new_access_token}
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token. Please login again."
+            )
 
 @app.get('/register', response_class=HTMLResponse)
 def register(request: Request):
@@ -194,8 +215,12 @@ async def login(username: str = Form(...), password: str = Form(...), Authorize:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username or password')
 
     access_token = Authorize.create_access_token(subject=username)
+    refresh_token = Authorize.create_refresh_token(subject=username)
+
+    users_collection.update_one({"username": username}, {"$set": {"refresh_token": refresh_token}})
     return {
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "role": user.get('role'),
         "token_type": "bearer",
         "redirect_url": "/" if user['role'] == 'superadmin' else '/'
@@ -203,8 +228,14 @@ async def login(username: str = Form(...), password: str = Form(...), Authorize:
 
 
 @app.get('/logout')
-def logout():
-    return {"msg": "Successfully logged out"}
+def logout(Authorize: AuthJWT = Depends()):
+    try:
+        current_user = Authorize.get_jwt_subject()
+        users_collection.find_one({"username": current_user}, {"$unset": {"refresh_token": ""}})
+        Authorize.unset_jwt_cookies()
+        return {"msg": "Successfully logged out"}
+    except Exception:
+        return {"msg": "Successfully logged out"}
 
 @app.get('/protected')
 async def protected_route(current_user: User = Depends(get_current_user)):
@@ -214,6 +245,31 @@ async def protected_route(current_user: User = Depends(get_current_user)):
 async def admin_route(superadmin: User = Depends(get_superadmin)):
     return {"Message": "Welcome Super Admin!"}
 
+@app.post("/refresh")
+def refresh(Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_refresh_token_required()
+        current_user = Authorize.get_jwt_subject()
+
+        user = users_collection.find_one({"username": current_user})
+        if not user or user.get("refresh_token") != Authorize.get_jwt_subject():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token"
+            )
+        new_access_token = Authorize.create_access_token(subject=current_user)
+        new_refresh_token = Authorize.create_refresh_token(subject=current_user)
+        users_collection.update_one({"username": current_user}, {"$set": {"refresh_token": new_refresh_token}})
+
+        return {
+            "access_token": new_access_token,
+            "refresh_token": new_refresh_token
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid refresh token"
+        )
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):

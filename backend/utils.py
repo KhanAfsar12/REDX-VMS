@@ -23,7 +23,6 @@ def get_password_hash(password: str):
 
 
 def estimate_bitrate(resolution: str, fps: int, codec: str) -> float:
-
     bitrate_map = {
         "12MP (4000x3000)": 12000, "12MP (4000x3072)": 12000,
         "9MP (3072x3072)": 9000, "9MP (4096x2160)": 9000,
@@ -39,9 +38,27 @@ def estimate_bitrate(resolution: str, fps: int, codec: str) -> float:
         "4CIF (704x576)": 600, "D1 (704x480)": 500,
         "nHD (640x360)": 300, "CIF (352x288)": 200
     }
-    codec_factor = {"h264": 1.0, "h265": 0.5, "h264+": 0.8, "h265+": 0.4}
-    base_bitrate = bitrate_map.get(resolution.strip(), 2.5)
-    return round(base_bitrate * (fps/15) * codec_factor.get(codec.lower(), 1.0), 2)
+
+    codec_factor = {
+        "h264": 1.0,
+        "h265": 0.5,
+        "h264+": 0.8,
+        "h265+": 0.4
+    }
+
+    resolution = resolution.strip()
+    codec = codec.lower().strip()
+
+    base_bitrate = bitrate_map.get(resolution)
+    if base_bitrate is None:
+        raise ValueError(f"Unknown resolution: {resolution}")
+
+    factor = codec_factor.get(codec)
+    if factor is None:
+        raise ValueError(f"Unknown codec: {codec}")
+
+    estimated_bitrate_kbps = base_bitrate * (fps / 15) * factor
+    return round(estimated_bitrate_kbps / 1000, 2)
 
 def calculate_storage(bitrate_mbps: float, retention_days: int, record_hours: int = 24) -> float:
     total_seconds = record_hours * 3600 * retention_days
@@ -64,7 +81,7 @@ def calculate_cpu(total_cameras, total_bitrate_mbps, camera_configs:List):
         (1.3 if cam['codec'] in ['h256', 'h265+'] else 1)
         for cam in camera_configs
     ) / len(camera_configs)
-    print("complexity:", complexity)
+    # print("complexity:", complexity)
     if total_cameras <= 16:
         if complexity < 1.5:
             return "4-core"

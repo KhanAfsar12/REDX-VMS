@@ -9,8 +9,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <!-- AG Grid Community Version -->
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/dist/ag-grid-community.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/styles/ag-grid.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/styles/ag-theme-alpine.css" />
+
+
   <style>
     :root {
       --primary-color: #e63946;
@@ -33,20 +38,32 @@
     }
 
     body {
-      font-family: 'Roboto', sans-serif;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      padding: 20px;
-      min-height: 100vh;
+      background-color: #f8f9fc;
+      color: var(--text-color);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     .container {
-      max-width: 1500px;
-      margin: 20px auto;
+      margin-top: 30px;
+      max-width: 1200px;
       background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     }
+
+   .header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header-container {
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 10px;
+}
+
+.admin-dashboard {
+  margin-left: 20px;
+}
 
     .header {
       display: flex;
@@ -62,105 +79,16 @@
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.3s ease;
-      margin-left: 1300px;
+      margin-left: auto;
+      margin-bottom: 10px;
     }
 
     .login-btn:hover {
       background-color: #31587a;
     }
 
-    /* Modal styles */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-    }
-
-    .modal-content {
-      background-color: white;
-      margin: 10% auto;
-      padding: 20px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--gray-medium);
-    }
-
-    .modal-title {
-      color: var(--accent-color);
-      margin: 0;
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--gray-dark);
-    }
-
-    .modal-form .form-group {
-      margin-bottom: 15px;
-    }
-
-    .modal-form label {
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .modal-form input {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid var(--gray-medium);
-      border-radius: 4px;
-    }
-
-    .submit-btn {
-      width: 100%;
-      padding: 10px;
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .submit-btn:hover {
-      background-color: #c1121f;
-    }
-
-    .error-message {
-      color: var(--danger-color);
-      font-size: 12px;
-      margin-top: 5px;
-      display: none;
-    }
-
-    .success-message {
-      color: var(--success-color);
-      text-align: center;
-      margin-top: 15px;
-      display: none;
-    }
-
-    .register > a{
-      text-decoration: none;
-      color: var(--secondary-color);
+    .login-btn.logout {
+      background-color: var(--danger-color);
     }
 
     h1,
@@ -173,9 +101,8 @@
     h1 {
       font-size: 28px;
       font-weight: 700;
-      border-bottom: 2px solid var(--primary-color);
       padding-bottom: 10px;
-      margin-bottom: 30px;
+      margin-bottom: 10px;
     }
 
     h2 {
@@ -284,6 +211,7 @@
       margin-bottom: 30px;
       border-bottom: 1px solid var(--gray-medium);
       padding-bottom: 15px;
+      flex-wrap: wrap;
     }
 
     .tab-btns button {
@@ -343,6 +271,7 @@
     .summary p {
       margin: 8px 0;
       display: flex;
+      flex-wrap: wrap;
     }
 
     .summary p strong {
@@ -355,6 +284,7 @@
       display: flex;
       gap: 15px;
       margin-top: 25px;
+      flex-wrap: wrap;
     }
 
     .form-group {
@@ -365,6 +295,16 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 20px;
+    }
+
+    .admin-dashboard a {
+      text-decoration: none;
+      color: white;
+      background-color: VAR(--secondary-color);
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: inline-block;
+      margin-left: 1257PX;
     }
 
     .card {
@@ -455,11 +395,12 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-wrap: wrap;
     }
 
     .search-container input {
       flex: 1;
-      max-width: 400px;
+      min-width: 200px;
       padding: 8px 12px;
       border: 1px solid var(--gray-medium);
       border-radius: 4px;
@@ -480,8 +421,10 @@
       gap: 10px;
       margin-bottom: 15px;
       justify-content: flex-end;
+      flex-wrap: wrap;
     }
 
+    /* Responsive adjustments */
     @media (max-width: 768px) {
       .container {
         padding: 15px;
@@ -514,45 +457,82 @@
         flex-direction: column;
         align-items: flex-end;
       }
+
+      .form-actions {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .summary p strong {
+        width: 120px;
+      }
+
+      .login-btn {
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      .card {
+        padding: 15px;
+      }
+
+      .summary p strong {
+        width: 100px;
+      }
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>REDX VMS Requirement Portal</h1>
-    <div class="button">
-      <button class="login-btn" id="openLoginModal">Login</button>
-    </div>
-
-    <!-- Login Modal -->
-    <div class="modal" id="loginModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="modal-title">Login to Your Account</h2>
-          <button class="close-btn" id="closeLoginModal">&times;</button>
-        </div>
-        <form class="modal-form" id="loginForm">
-          <div class="form-group">
-            <label for="loginUsername">Username</label>
-            <input type="text" id="loginUsername" name="username" required>
-            <div class="error-message" id="loginUsernameError">Please enter a valid username</div>
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" name="password" required minlength="8">
-            <div class="error-message" id="loginPasswordError">Password must be at least 8 characters</div>
-          </div>
-          <button type="submit" class="submit-btn">Login</button>
-          <div class="success-message" id="loginSuccessMessage">
-            Login successful! Redirecting...
-          </div>
-        </form>
-        <div class="register">
-          <a href="{{ url_for('register') }}">Create Account</a>
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <img src="{{ url_for('static', path='img/REDX Logo.png') }}" alt="REDX Logo" height="30" class="me-2">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">Home</a>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center">
+          <span class="me-3 text-muted" id="currentUser"></span>
+          <button class="btn btn-outline-danger" id="logoutBtn">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </button>
         </div>
       </div>
     </div>
+  </nav>
+  <div class="container">
+
+
+<div class="header-container">
+  <div class="title-wrapper">
+    <h1>REDX VMS Requirement Portal</h1>
+  </div>
+  <div class="admin-dashboard" id="admin-dashboard">
+    <button id="createUserBtn" class="btn-secondary">Admin Dashboard</button>
+  </div>
+</div>
+
 
     <div class="tab-btns">
       <button class="btn-primary" onclick="showCreateForm()">
@@ -562,7 +542,7 @@
         </svg>
         Create New Entry
       </button>
-      <button class="btn-secondary" onclick="loadHistory()">
+      <button class="btn-secondary" onclick="loadHistory()" id="history-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
           <path
             d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.27l.493-.87a8.025 8.025 0 0 1 .979.654l-.615.789a6.996 6.996 0 0 0-.418-.302zm1.834 1.79a6.99 6.99 0 0 0-.653-.796l.724-.69c.27.285.52.59.747.91l-.818.576zm.744 1.352a7.08 7.08 0 0 0-.214-.468l.893-.45a7.976 7.976 0 0 1 .45 1.088l-.95.313a7.023 7.023 0 0 0-.179-.483zm.53 2.507a6.991 6.991 0 0 0-.1-1.025l.985-.17c.067.386.106.778.116 1.17l-1 .025zm-.131 1.538c.033-.17.06-.339.081-.51l.993.123a7.957 7.957 0 0 1-.23 1.155l-.964-.267c.046-.165.086-.332.12-.501zm-.952 2.379c.184-.29.346-.594.486-.908l.914.405c-.16.36-.345.706-.555 1.038l-.845-.535zm-.964 1.205c.122-.122.239-.248.35-.378l.758.653a8.073 8.073 0 0 1-.401.432l-.707-.707z" />
@@ -670,7 +650,8 @@
 
     <div id="history-section" class="hidden">
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"
+          id="exportAllBtn">
           <h2>Submission History</h2>
           <div class="export-actions">
             <button class="btn-outline" onclick="exportAllData()">
@@ -705,10 +686,21 @@
     </div>
   </div>
 
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
-    const localIP = '{{ local_ip }}'
-    const customHost = `http://${localIP}`
-    console.log(localIP)
+    const localIP = '{{ local_ip }}';
+    const customHost = `http://${localIP}`;
+    console.log(localIP);
+    const role = localStorage.getItem('role');
+    const adminDashboardBtn = document.getElementById('admin-dashboard');
+    const historyContainer = document.getElementById('history-btn');
+    if(role === 'user'){
+      historyContainer.style.display = 'none';
+      adminDashboardBtn.style.display = 'none';
+    }
+
 
     const codecOptions = ["H264", "H264+", "H265", "H265+"];
     const resolutionOptions = [
@@ -738,141 +730,104 @@
     let allRowData = [];
     let currentSearchTerm = "";
 
-    document.addEventListener('DOMContentLoaded', function () {
-      checkAuthState();
-      const modal = document.getElementById('loginModal');
-      const openBtn = document.getElementById('openLoginModal');
-      const closeBtn = document.getElementById('closeLoginModal');
-      const loginForm = document.getElementById('loginForm');
-
-      openBtn.addEventListener('click', async function () {
-        if(openBtn.textContent === 'Logout'){
-          try{
-            const token = localStorage.getItem('authToken');
-            if(!token) return;
-
-            const response = await fetch(`${customHost}:8000/logout`, {
-              method : 'POST',
-              headers : {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            });
-            if(!response.ok){
-              throw new Error('Logout Failed');
-            }
-
-            localStorage.removeItem('authToken');
-            openBtn.textContent = 'Login';
-            openBtn.style.backgroundColor = 'var(--secondary-color)';
-            showToast('Logged out Successfully', 'success');
-          }
-          catch(error){
-            console.error('Logout Error', error);
-            showToast(error.message || 'Logout Failed', 'error');
-          }
-        }
-        else{
-          modal.style.display = 'block';
-        }
-        
-      });
-      closeBtn.addEventListener('click', function () {
-        modal.style.display = 'none';
-      });
-      window.addEventListener('click', function (event) {
-        if (event.target === modal) {
-          modal.style.display = 'none';
-        }
-      });
-
-      // Make the event handler async
-      loginForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        document.querySelectorAll('.error-message').forEach(el => {
-          el.style.display = 'none';
-        });
-        let isValid = true;
-        const username = document.getElementById('loginUsername').value;
-        const password = document.getElementById('loginPassword').value;
-
-        if (!username) {
-          document.getElementById('loginUsernameError').style.display = 'block';
-          isValid = false;
-        }
-        if (!password || password.length < 8) {
-          document.getElementById('loginPasswordError').style.display = 'block';
-          isValid = false;
-        }
-
-        if (!isValid) return;
-
-        try {
-          const submitBtn = loginForm.querySelector('button[type="submit"]');
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = "Logging in...";
-
-          const response = await fetch(`${customHost}:8000/login`, {
-            method: 'POST',
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username: username, password: password })
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Login Failed');
-          }
-          const data = await response.json();
-
-          if (data.access_token) {
-            localStorage.setItem('authToken', data.access_token);
-            document.getElementById('loginSuccessMessage').style.display = 'block';
-            setTimeout(() => {
-              modal.style.display = 'none';
-              openBtn.textContent = 'Logout';
-              openBtn.style.backgroundColor = 'var(--danger-color)';
-              showToast('Login Successful', 'success');
-            }, 1500);
-          }
-        }
-        catch (error) {
-          console.error('Login error:', error);
-          showToast(error.message || 'Login failed', 'error');
-        }
-        finally {
-          const submitBtn = loginForm.querySelector('button[type="submit"]');
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Login';
-          }
-        }
-      });
-
-      function checkAuthState() {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          const openBtn = document.getElementById('openLoginModal');
-          openBtn.textContent = 'Logout';
-          openBtn.style.backgroundColor = 'var(--danger-color)';
-        }
-      }
-
-      addRow();
-      document.getElementById("pdfBtn").addEventListener("click", handlePdfDownload);
-      document.getElementById("searchInput").addEventListener("keyup", function (event) {
-        if (event.key === "Enter") {
-          applySearch();
-        }
-      });
-    });
-
-    function showCreateForm() {
-      document.getElementById("form-section").classList.remove("hidden");
-      document.getElementById("history-section").classList.add("hidden");
+    // Get JWT token from localStorage
+    function getToken() {
+      return localStorage.getItem('access_token');
     }
 
+    // Handle unauthorized access
+    function handleUnauthorized() {
+      showToast('Your session has expired. Please log in again.', 'danger');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+    }
+
+    // Handle logout
+    function handleLogout() {
+      localStorage.removeItem('access_token');
+      window.location.href = '/login';
+    }
+
+    // Check authentication status
+    function checkAuth() {
+      const token = getToken();
+      const logoutBtn = document.getElementById('logoutBtn');
+      const currentUserSpan = document.getElementById("currentUser");
+
+      if (token) {
+        // User is authenticated
+        logoutBtn.innerHTML = '<i class="bi bi-box-arrow-right"></i> Logout';
+        logoutBtn.onclick = handleLogout;
+
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          if (payload.sub) {
+            currentUserSpan.textContent = `Logged in as ${payload.sub}`;
+          }
+        }
+        catch (e) {
+          console.error("Error decoding token", e);
+        }
+
+      } else {
+        // User is not authenticated
+        logoutBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Login';
+        logoutBtn.onclick = () => window.location.href = '/login';
+        currentUserSpan.textContent = '';
+      }
+    }
+
+    // Generic function for authenticated API requests
+    async function makeAuthenticatedRequest(url, method = 'GET', body = null) {
+      const token = getToken();
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      try {
+        const options = {
+          method,
+          headers
+        };
+
+        if (body) {
+          options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(url, options);
+
+        if (response.status === 401) {
+          showToast('Your session has expired. Please login again.', 'error');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+          return null;
+        }
+
+        if (response.status === 403) {
+          const error = await response.json();
+          showToast(error.detail || 'You do not have permission to access this resource', 'error');
+          return null;
+        }
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || "Request failed");
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error("API request error:", error);
+        showToast(error.message || "Request failed", "error");
+        return null;
+      }
+    }
+
+    // Camera Configuration Functions
     function calculateBitrate(resolution, fps, codec, qualityFactor = 1) {
       const bitrate_map = {
         "12MP (4000x3000)": 12000, "12MP (4000x3072)": 12000,
@@ -888,16 +843,14 @@
         "1.3MP (1280x960)": 1500, "720P (1280x720)": 1000,
         "4CIF (704x576)": 600, "D1 (704x480)": 500,
         "nHD (640x360)": 300, "CIF (352x288)": 200
-      }
-      const codec_factor = { "h264": 1.0, "h265": 0.5, "h264+": 0.8, "h265+": 0.4 }
+      };
+      const codec_factor = { "h264": 1.0, "h265": 0.5, "h264+": 0.8, "h265+": 0.4 };
 
-      const base_bitrate = bitrate_map[resolution.trim()] || 2.5
-      const factor = codec_factor[codec.toLowerCase()] || 1.0
-      const bitrate = base_bitrate * (fps / 15) * factor
-      console.log(bitrate)
+      const base_bitrate = bitrate_map[resolution.trim()] || 2.5;
+      const factor = codec_factor[codec.toLowerCase()] || 1.0;
+      const bitrate = base_bitrate * (fps / 15) * factor;
       return Math.round(bitrate * 100) / 100;
     }
-
 
     function updateBitrate(row) {
       const resolution = row.querySelector("select[data-field='resolution']").value;
@@ -1032,6 +985,48 @@
       });
     }
 
+
+    document.getElementById('createUserBtn').addEventListener('click', async () => {
+      const token = getToken();
+
+      if (!token) {
+        showToast("Please login first", "error");
+        window.location.href = '/login';
+        return;
+      }
+
+      try {
+        const userInfo = await makeAuthenticatedRequest(`${customHost}:8000/protected`);
+        if (!userInfo) return;
+        const response = await fetch('/admin', {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer ' + token
+          }
+        });
+
+        if (response.ok) {
+          const html = await response.text();
+          document.open();
+          document.write(html);
+          document.close();
+        } else if (response.status === 403) {
+          const error = await response.json();
+          showToast(error.detail || "Access denied. Only superadmin can view this page", "error");
+        } else if (response.status === 401) {
+          showToast("You are not authorized. Please login", "error");
+          window.location.href = '/login';
+        } else {
+          showToast("Something went wrong.", "error");
+        }
+
+      } catch (error) {
+        console.error("Error fetching admin page:", error);
+        showToast("Failed to load admin dashboard.", "error");
+      }
+    });
+
+    // Form Submission
     async function handleFormSubmit(e) {
       e.preventDefault();
 
@@ -1045,7 +1040,6 @@
         return;
       }
 
-
       const cameraConfigs = getCameraData();
       if (cameraConfigs.length === 0) {
         showToast("Please add at least one camera configuration", "error");
@@ -1055,86 +1049,75 @@
       const payload = {
         customer_name: customerName,
         project_name: projectName,
-        location: document.getElementById("location").value,
-        assigned_person: document.getElementById("assigned_person").value,
+        location: location,
+        assigned_person: assignedPerson,
         camera_configs: cameraConfigs,
       };
 
+      const submitBtn = document.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="spin">
+          <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+          <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+        </svg>
+        Processing...
+      `;
+
       try {
-        const submitBtn = document.querySelector("button[type='submit']");
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="spin">
-            <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
-            <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
-          </svg>
-          Processing...
-        `;
-        const token = localStorage.getItem('authToken');
-        if(!token) return;
-        const res = await fetch(`${customHost}:8000/requirement/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify(payload)
-        });
+        const data = await makeAuthenticatedRequest(
+          `${customHost}:8000/requirement/`,
+          'POST',
+          payload
+        );
 
-        if (!res.ok) {
-          const error = await res.json();
-          throw new Error(error.detail || "Server error");
+        if (data) {
+          latestID = data.id;
+          showSummary(data);
+          showToast("Requirement submitted successfully", "success");
         }
-
-        const data = await res.json();
-        latestID = data.id;
-
-        const formatServerSpec = (spec) => {
-          if (!spec) return "N/A";
-          return `
-            CPU: ${spec.cpu || 'N/A'},
-            RAM: ${spec.ram_gb || 'N/A'} GB,
-            HDD-(OS): ${spec.hdd_tb || 'N/A'} TB,
-            NIC: ${spec.nic || 'N/A'},
-          `.replace(/\s+/g, ' ').trim();
-        };
-
-        const summary = document.getElementById("summary");
-        summary.classList.remove("hidden");
-
-        document.getElementById("summary-content").innerHTML = `
-          <p><strong>Customer:</strong> ${data.customer_name}</p>
-          <p><strong>Project:</strong> ${data.project_name}</p>
-          <p><strong>Location:</strong> ${data.location || "-"}</p>
-          <p><strong>Assigned To:</strong> ${data.assigned_person || "-"}</p>
-          <p><strong>Total Cameras:</strong> ${data.camera_configs.reduce((a, c) => a + (c.qty || 1), 0)}</p>
-          <p><strong>Total Bandwidth:</strong> ${data.bandwidth || "N/A"} Mbps</p>
-          <p><strong>Total Recording Storage:</strong> ${data.storage_tb || "N/A"} TB</p>
-          <p><strong>Submission ID:</strong> ${data.id}</p>
-          <p><strong>Server:</strong> ${formatServerSpec(data.server_spec)}</p>
-          <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-        `;
-
-        document.getElementById("pdfBtn").style.display = "inline-block";
-        showToast("Requirement submitted successfully", "success");
-      } catch (error) {
-        console.error("Error submitting form:", error);
-        showToast(error.message || "Error submitting requirement", "error");
       } finally {
-        const submitBtn = document.querySelector("button[type='submit']");
         submitBtn.disabled = false;
         submitBtn.innerHTML = `Submit Requirement`;
       }
     }
 
+    function showSummary(data) {
+      const formatServerSpec = (spec) => {
+        if (!spec) return "N/A";
+        return `
+          CPU: ${spec.cpu || 'N/A'},
+          RAM: ${spec.ram_gb || 'N/A'} GB,
+          HDD-(OS): ${spec.hdd_tb || 'N/A'} TB,
+          NIC: ${spec.nic || 'N/A'},
+        `.replace(/\s+/g, ' ').trim();
+      };
+
+      const summary = document.getElementById("summary");
+      summary.classList.remove("hidden");
+
+      document.getElementById("summary-content").innerHTML = `
+        <p><strong>Customer:</strong> ${data.customer_name}</p>
+        <p><strong>Project:</strong> ${data.project_name}</p>
+        <p><strong>Location:</strong> ${data.location || "-"}</p>
+        <p><strong>Assigned To:</strong> ${data.assigned_person || "-"}</p>
+        <p><strong>Total Cameras:</strong> ${data.camera_configs.reduce((a, c) => a + (c.qty || 1), 0)}</p>
+        <p><strong>Total Bandwidth:</strong> ${data.bandwidth || "N/A"} Mbps</p>
+        <p><strong>Total Recording Storage:</strong> ${data.storage_tb || "N/A"} TB</p>
+        <p><strong>Submission ID:</strong> ${data.id}</p>
+        <p><strong>Server:</strong> ${formatServerSpec(data.server_spec)}</p>
+        <p><strong>Date:</strong> ${new Date(data.created_at || Date.now()).toLocaleString()}</p>
+      `;
+    }
+
+    // History Functions
     function initGrid(data) {
       const gridDiv = document.querySelector('#historyGrid');
 
       if (gridApi) {
         try {
           gridApi.destroy();
-        }
-        catch (e) {
+        } catch (e) {
           console.warn("Error destroying grid: ", e);
         }
         gridApi = null;
@@ -1192,7 +1175,6 @@
         rowData: data,
         pagination: true,
         paginationPageSize: 20,
-        //domLayout: 'autoHeight',
         onGridReady: (params) => {
           gridApi = params.api;
           params.api.sizeColumnsToFit();
@@ -1200,32 +1182,7 @@
       };
 
       new agGrid.Grid(gridDiv, gridOptions);
-
       updateSearchResultsCount(data.length);
-    }
-
-    function applySearch() {
-      currentSearchTerm = document.getElementById("searchInput").value.toLowerCase();
-      console.log("Afsar:", currentSearchTerm)
-      if (!currentSearchTerm) {
-        gridApi.setRowData(allRowData);
-        updateSearchResultsCount(allRowData.length);
-        return;
-      }
-
-      const filteredData = allRowData.filter(row => {
-        return Object.values(row).some(value => {
-          if (value === null || value === undefined) return false;
-          return String(value).toLowerCase().includes(currentSearchTerm);
-        });
-      });
-
-      gridApi.setRowData(filteredData);
-      updateSearchResultsCount(filteredData.length);
-    }
-
-    function updateSearchResultsCount(count) {
-      document.getElementById("searchResultsCount").textContent = `${count} records found`;
     }
 
     function dateFormatter(params) {
@@ -1262,148 +1219,6 @@
       return div;
     }
 
-function handlePdfExport(id) {
-  const token = localStorage.getItem('authToken');
-  
-  if (!token) {
-    showToast("Please login first", "error");
-    return;
-  }
-  const encodedToken = encodeURIComponent(token);
-  const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf?token=${encodedToken}`;
-  const newWindow = window.open(pdfUrl, '_blank');
-  if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-    showToast("Popup blocked. Please allow popups for this site.", "warning");
-    
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-}
-
-    // Update your PDF button event listener
-    document.getElementById("pdfBtn").addEventListener("click", function() {
-      if (latestID) {
-        handlePdfExport(latestID);
-      } else {
-        showToast("No submission to export", "warning");
-      }
-    });
-
-
-async function exportAllData() {
-  try {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      showToast("Please login first", "error");
-      return;
-    }
-
-    const exportBtn = document.querySelector("#exportFilteredBtn");
-    exportBtn.disabled = true;
-    exportBtn.innerHTML = "Exporting...";
-
-    // Encode the token for URL safety
-    const encodedToken = encodeURIComponent(token);
-    const url = `${customHost}:8000/requirement/export/all/xlsx?token=${encodedToken}`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Export failed');
-    }
-
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    a.download = `redx_all_requirements_${new Date().toISOString().slice(0,10)}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(downloadUrl);
-    a.remove();
-
-    showToast("All data exported successfully", "success");
-  } catch (error) {
-    console.error("Export error:", error);
-    showToast(error.message || "Error exporting all data", "error");
-  } finally {
-    const exportBtn = document.querySelector("#exportFilteredBtn");
-    if (exportBtn) {
-      exportBtn.disabled = false;
-      exportBtn.innerHTML = "Export All";
-    }
-  }
-}
-
-async function exportFilteredData() {
-  try {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      showToast("Please login first", "error");
-      return;
-    }
-
-    const exportBtn = document.querySelector("#exportFilteredBtn");
-    exportBtn.disabled = true;
-    exportBtn.innerHTML = "Exporting...";
-
-    const searchTerm = document.getElementById("searchInput").value;
-    const encodedToken = encodeURIComponent(token);
-    
-    let url = `${customHost}:8000/requirement/export/filtered/xlsx?token=${encodedToken}`;
-    if (searchTerm) {
-      url += `&query=${encodeURIComponent(searchTerm)}`;
-    }
-
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Export failed');
-    }
-
-    // Get the blob and create download link
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    
-    // Create a filename based on search term or default
-    let filename = 'redx_filtered_requirements';
-    if (searchTerm) {
-      filename += `_${searchTerm.substring(0, 20)}`;
-    }
-    filename += `_${new Date().toISOString().slice(0,10)}.xlsx`;
-    
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(downloadUrl);
-    a.remove();
-
-    showToast("Filtered data exported successfully", "success");
-  } catch (error) {
-    console.error("Export error:", error);
-    showToast(error.message || "Error exporting filtered data", "error");
-  } finally {
-    const exportBtn = document.querySelector("#exportFilteredBtn");
-    if (exportBtn) {
-      exportBtn.disabled = false;
-      exportBtn.innerHTML = "Export Filtered";
-    }
-  }
-}
-
     async function loadHistory() {
       document.getElementById("form-section").classList.add("hidden");
       document.getElementById("history-section").classList.remove("hidden");
@@ -1418,25 +1233,11 @@ async function exportFilteredData() {
         if (searchTerm) {
           url = `${customHost}:8000/requirement/search/?query=${encodeURIComponent(searchTerm)}`;
         }
-        token = localStorage.getItem('authToken')
 
-        const res = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const data = await makeAuthenticatedRequest(url);
+        if (!data) return;
 
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("API Error:", res.status, errorText);
-          throw new Error(`API Error: ${res.status} ${errorText}`);
-        }
-
-        const data = await res.json();
         const results = searchTerm ? data.results : data;
-
-        console.log("API Response:", results);
 
         if (results.length === 0) {
           gridDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--gray-dark);">No submission history found</div>';
@@ -1449,23 +1250,44 @@ async function exportFilteredData() {
         }));
 
         initGrid(formattedData);
-        updateSearchResultsCount(results.length);
       } catch (error) {
-        console.error("Full error loading history:", error);
+        console.error("Error loading history:", error);
         const gridDiv = document.querySelector('#historyGrid');
         gridDiv.innerHTML = `
-            <div style="padding: 20px; text-align: center; color: var(--danger-color);">
-                Error loading history: ${error.message}<br>
-                Please check console for details.
-            </div>
+          <div style="padding: 20px; text-align: center; color: var(--danger-color);">
+            Error loading history: ${error.message}<br>
+          </div>
         `;
       }
     }
 
+    function applySearch() {
+      currentSearchTerm = document.getElementById("searchInput").value.toLowerCase();
+      if (!currentSearchTerm) {
+        gridApi.setRowData(allRowData);
+        updateSearchResultsCount(allRowData.length);
+        return;
+      }
+
+      const filteredData = allRowData.filter(row => {
+        return Object.values(row).some(value => {
+          if (value === null || value === undefined) return false;
+          return String(value).toLowerCase().includes(currentSearchTerm);
+        });
+      });
+
+      gridApi.setRowData(filteredData);
+      updateSearchResultsCount(filteredData.length);
+    }
+
+    function updateSearchResultsCount(count) {
+      document.getElementById("searchResultsCount").textContent = `${count} records found`;
+    }
+
     async function loadEntry(id) {
       try {
-        const res = await fetch(`${customHost}:8000/requirement/${id}`);
-        const data = await res.json();
+        const data = await makeAuthenticatedRequest(`${customHost}:8000/requirement/${id}`);
+        if (!data) return;
 
         document.getElementById("customer_name").value = data.customer_name || "";
         document.getElementById("project_name").value = data.project_name || "";
@@ -1479,14 +1301,210 @@ async function exportFilteredData() {
           addRow();
         }
 
+        const formatServerSpec = (spec) => {
+          if (!spec) return "N/A";
+          return `
+            CPU: ${spec.cpu || 'N/A'},
+            RAM: ${spec.ram_gb || 'N/A'} GB,
+            HDD-(OS): ${spec.hdd_tb || 'N/A'} TB,
+            NIC: ${spec.nic || 'N/A'},
+          `.replace(/\s+/g, ' ').trim();
+        };
+
+        const summary = document.getElementById("summary");
+        summary.classList.remove("hidden");
+
+        document.getElementById("summary-content").innerHTML = `
+          <p><strong>Customer:</strong> ${data.customer_name}</p>
+          <p><strong>Project:</strong> ${data.project_name}</p>
+          <p><strong>Location:</strong> ${data.location || "-"}</p>
+          <p><strong>Assigned To:</strong> ${data.assigned_person || "-"}</p>
+          <p><strong>Total Cameras:</strong> ${data.camera_configs.reduce((a, c) => a + (c.qty || 1), 0)}</p>
+          <p><strong>Total Bandwidth:</strong> ${data.bandwidth || "N/A"} Mbps</p>
+          <p><strong>Total Recording Storage:</strong> ${data.storage_tb || "N/A"} TB</p>
+          <p><strong>Submission ID:</strong> ${data.id}</p>
+          <p><strong>Server:</strong> ${formatServerSpec(data.server_spec)}</p>
+          <p><strong>Date:</strong> ${new Date(data.created_at).toLocaleString()}</p>
+        `;
+
         latestID = data.id;
         showCreateForm();
         showToast("Entry loaded successfully", "success");
       } catch (error) {
         console.error("Error loading entry:", error);
-        showToast("Error loading entry", "error");
+        showToast(error.message || "Error loading entry", "error");
       }
     }
+
+    function handlePdfExport(id) {
+      const token = localStorage.getItem('access_token');
+
+      if (!token) {
+        showToast("Please login first", "error");
+        return;
+      }
+      const encodedToken = encodeURIComponent(token);
+      const pdfUrl = `${customHost}:8000/requirement/${id}/export/pdf?token=${encodedToken}`;
+      const newWindow = window.open(pdfUrl, '_blank');
+
+    }
+
+    // Update your PDF button event listener
+    document.getElementById("pdfBtn").addEventListener("click", function () {
+      if (latestID) {
+        handlePdfExport(latestID);
+      } else {
+        showToast("No submission to export", "warning");
+      }
+    });
+
+
+    function handlePdfDownload() {
+      if (latestID) {
+        handlePdfExport(latestID);
+      } else {
+        showToast("No submission to export", "warning");
+      }
+    }
+
+    async function exportAllData() {
+    try {
+        const exportBtn = document.querySelector("#exportAllBtn button");
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = "Exporting...";
+
+        const searchTerm = document.getElementById("searchInput").value;
+        let url = `${customHost}:8000/requirement/export/all/xlsx`;
+
+        // Add query parameters if they exist
+        const params = new URLSearchParams();
+        if (searchTerm) params.append('query', searchTerm);
+        
+        if (params.toString()) {
+            url += `?${params.toString()}`;
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Export failed');
+        }
+
+        // Get filename from content-disposition header or create one
+        const contentDisposition = response.headers.get('content-disposition');
+        let filename = 'redx_all_requirements.xlsx';
+        
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1];
+            }
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        a.remove();
+
+        showToast("All data exported successfully", "success");
+    } catch (error) {
+        console.error("Export error:", error);
+        showToast(error.message || "Error exporting all data", "error");
+    } finally {
+        const exportBtn = document.querySelector("#exportAllBtn button");
+        if (exportBtn) {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = "Export All";
+        }
+    }
+}
+
+async function exportFilteredData() {
+    try {
+        const exportBtn = document.querySelector("#exportFilteredBtn");
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = "Exporting...";
+
+        const searchTerm = document.getElementById("searchInput").value;
+        const token = getToken();
+        if (!token) {
+            throw new Error("Please login first");
+        }
+        let url = new URL(`${customHost}:8000/requirement/export/filtered/xlsx`);
+
+        // Add query parameters
+        const params = new URLSearchParams();
+        if (searchTerm) params.append('query', searchTerm);
+        params.append('token', token);
+
+        url.search = params.toString();
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            // Try to parse error details
+            let errorMsg = 'Export failed';
+            try {
+                const errorData = await response.json();
+                errorMsg = errorData.detail || errorMsg;
+            } catch (e) {
+                console.error("Error parsing error response:", e);
+            }
+            throw new Error(errorMsg);
+        }
+
+        const blob = await response.blob();
+        const contentDisposition = response.headers.get('content-disposition');
+        let filename = 'redx_report.xlsx'
+
+        if(contentDisposition){
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          if(filenameMatch && filenameMatch[1]){
+            filename = filenameMatch[1];
+          }
+        }
+
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        a.remove();
+
+        showToast("Filtered data exported successfully", "success");
+    } catch (error) {
+        console.error("Export error:", error);
+        showToast(error.message || "Error exporting filtered data", "error");
+    } finally {
+        const exportBtn = document.querySelector("#exportFilteredBtn");
+        if (exportBtn) {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                </svg>
+                Export Filtered
+            `;
+        }
+    }
+}
 
     function downloadJSON() {
       const data = {
@@ -1511,12 +1529,10 @@ async function exportFilteredData() {
       showToast("JSON exported successfully", "success");
     }
 
-    function handlePdfDownload() {
-      if (latestID) {
-        window.open(`${customHost}:8000/requirement/${latestID}/export/pdf`, '_blank');
-      } else {
-        showToast("No submission to export", "warning");
-      }
+    // UI Functions
+    function showCreateForm() {
+      document.getElementById("form-section").classList.remove("hidden");
+      document.getElementById("history-section").classList.add("hidden");
     }
 
     function showToast(message, type = "info") {
@@ -1565,6 +1581,19 @@ async function exportFilteredData() {
       }, 3000);
     }
 
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function () {
+      checkAuth();
+      addRow();
+      document.getElementById("pdfBtn").addEventListener("click", handlePdfDownload);
+      document.getElementById("searchInput").addEventListener("keyup", function (event) {
+        if (event.key === "Enter") {
+          applySearch();
+        }
+      });
+    });
+
+    // Add spin animation for loading states
     const style = document.createElement('style');
     style.textContent = `
       @keyframes spin {
@@ -1576,7 +1605,6 @@ async function exportFilteredData() {
       }
     `;
     document.head.appendChild(style);
-
   </script>
 </body>
 

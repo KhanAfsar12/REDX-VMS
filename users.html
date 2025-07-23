@@ -1,11 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REDX VMS Dashboard</title>
+</head>
+<body>
+    <form id="createUserForm" action="{{ url_for('admin/users') }}" method="post">
+        <div class="modal-body">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="fullName" class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="fullName" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            <div class="mb-3">
+                <label for="role" class="form-label">Role</label>
+                <select class="form-select" id="role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="disabled">
+                <label class="form-check-label" for="disabled">Disabled</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Create User</button>
+        </div>
+    </form>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
 from typing import List, Optional
 from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import MissingTokenError, JWTDecodeError
 from datetime import datetime
 from uuid import uuid4
 from pydantic import BaseModel
@@ -18,19 +74,15 @@ import socket
 from schema import RequirementRequest, RequirementResponse, UserCreate, UserLogin
 from utils import Settings, build_search_filter, calculate_storage, estimate_bitrate, get_password_hash, recommend_server, update_bitrate, verify_password
 
-hostname = socket.gethostname()
-local_ip = socket.gethostbyname(hostname)
-
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.144.30.1:8000"], 
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"]
 )
 
 client = MongoClient("mongodb://192.168.1.67:27017")
@@ -43,10 +95,6 @@ os.makedirs(EXPORT_DIR, exist_ok=True)
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
 
 templates = Jinja2Templates(directory=TEMPLATE_DIR)
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-static_dir = os.path.join(BASE_DIR, ".", "static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 class User(BaseModel):
@@ -80,22 +128,6 @@ class UserListResponse(BaseModel):
     users: List[User]
 
 
-class UserBase(BaseModel):
-    username: str
-    email : str
-    role : str
-
-class UserCreate(UserBase):
-    password : str
-
-class UserUpdate(BaseModel):
-    email : Optional[str] = None
-    password : Optional[str] = None
-    role : Optional[str] = None
-
-class UserOut(UserBase):
-    pass
-
 
 def create_superadmin():
     superadmin = users_collection.find_one({"username": "superadmin"})
@@ -111,51 +143,52 @@ def create_superadmin():
         })
 create_superadmin()
 
-
+hostname = socket.gethostname()
+local_ip = socket.gethostbyname(hostname)
 
 
 @AuthJWT.load_config
 def get_config():
     return Settings()
 
-def get_current_user(Authorize: AuthJWT = Depends()):
+async def get_current_user(Authorize: AuthJWT=Depends()):
     try:
-        Authorize.jwt_required() 
-    except MissingTokenError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing access token")
+        Authorize.jwt_required()
+        username = Authorize.get_jwt_subject()
+        user_data = Authorize.get_raw_jwt()
+        role = user_data.get('role', "user")
+        user = users_collection.find_one({"username": username})
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        print("User is authenticated")
+        return  UserInDB(**user)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-
-    current_user = Authorize.get_jwt_subject()
-    return current_user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Token, Login again"
+        )
     
 async def get_superadmin(Authorize: AuthJWT = Depends()):
     try:
         Authorize.jwt_required()
         username = Authorize.get_jwt_subject()
         user_data = Authorize.get_raw_jwt()
-
-        print("user_data:", user_data)
-        
+        role = user_data.get('role', "user")
+        print("role:", role)
         user = users_collection.find_one({"username": username})
+        print(user, "...............................")
         if not user or user.get("role") != "superadmin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='Super Admin privileges required'
             )
-            
-        return UserInDB(**user)
-    
-    except MissingTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Please login to access this page"
-        )
         
-    except JWTDecodeError:
+        return role
+    
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Your session has expired. Please login again."
+            detail="Invalid Token, Login again"
         )
 
 
@@ -179,36 +212,31 @@ async def register(user: UserCreate):
     users_collection.insert_one(user_dict)
     return user_dict
 
-@app.get("/login")
-async def login(request:Request):
-    context = {
-        "request":request,
-        "local_ip": local_ip
-    }
-    return templates.TemplateResponse("login.html", context)
 
 @app.post('/login')
-async def login(username: str = Form(...), password: str = Form(...), Authorize: AuthJWT = Depends()):
-    user = users_collection.find_one({"username": username})
-    if not user or not verify_password(password, user['hashed_password']):
+async def login(user_data: UserLogin, Authorize: AuthJWT = Depends()):
+    user = users_collection.find_one({"username": user_data.username})
+    if not user or not verify_password(user_data.password, user['hashed_password']):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username or password')
+    
+    access_token = Authorize.create_access_token(
+        subject=user["username"],
+        user_claims={"role": user["role"]}
+    )
 
-    access_token = Authorize.create_access_token(subject=username)
-    return {
-        "access_token": access_token,
-        "role": user.get('role'),
-        "token_type": "bearer",
-        "redirect_url": "/" if user['role'] == 'superadmin' else '/'
-    }
+    decoded_token = Authorize.get_raw_jwt(access_token)
+    expires_at = decoded_token['exp']
+    role = decoded_token['role']
+    return {"access_token": access_token, "token_type": "bearer", "expires_at": expires_at, "role":role}
 
-
-@app.get('/logout')
+@app.post('/logout')
 def logout():
-    return {"msg": "Successfully logged out"}
+    return {"message": "Successfully logged out (client should delete token)"}
+
 
 @app.get('/protected')
 async def protected_route(current_user: User = Depends(get_current_user)):
-    return {"message": f"Hello {current_user}"}
+    return {"message": f"Hello {current_user.username}", "role": f"Your role is {current_user.role}"}
 
 @app.get('/admin-only')
 async def admin_route(superadmin: User = Depends(get_superadmin)):
@@ -221,8 +249,7 @@ def home(request: Request):
     print("local_ip:", local_ip)
     context = {
         "request": request,
-        "local_ip": local_ip,
-        "is_authenticated":""
+        "local_ip": local_ip
     }
     return templates.TemplateResponse("index1.html", context)
 
@@ -354,6 +381,7 @@ async def export_pdf(
 
 @app.get("/requirement/list/")
 def list_all_requirements(current_user: User = Depends(get_superadmin)):
+    print(current_user, "[[[[[[[[[[[[[]]]]]]]]]]]]]")
     results = []
     for doc in collection.find().sort("created_at", -1):
         total_qty = sum(cam.get("qty", 1) for cam in doc.get('camera_configs', []))
@@ -372,18 +400,9 @@ def list_all_requirements(current_user: User = Depends(get_superadmin)):
 
 
 @app.get("/requirement/export/all/xlsx")
-def export_all_excel(
-    Authorize: AuthJWT = Depends(),
-    query: str = Query(None),
-    customer_name: str = Query(None),
-    project_name: str = Query(None),
-    location: str = Query(None),
-    assigned_person: str = Query(None),
-    start_date: datetime = Query(None),
-    end_date: datetime = Query(None)
-):
+def export_all_excel(token: str = Query(..., description="JWT token for authentication"), Authorize: AuthJWT = Depends()):
     try:
-        Authorize.jwt_required()
+        Authorize.jwt_required("access", token=token)
         current_user = Authorize.get_jwt_subject()
         
         docs = list(collection.find())
@@ -418,47 +437,68 @@ def export_all_excel(
                     cam["qty"]
                 ])
 
-        filename = f"redx_all_requirements_{datetime.now().strftime('%Y%m%d')}.xlsx"
-        path = os.path.join(EXPORT_DIR, filename)
+        path = os.path.join(EXPORT_DIR, f"all_requirements.xlsx")
         wb.save(path)
-        
-        return FileResponse(
-            path,
-            filename=filename,
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
+        return FileResponse(path, filename=f"redx_all_requirements.xlsx", headers={"Content-Dispostion": f"attachment; filename=redx_all_requirements.xlsx"})
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+        raise  HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized access'
         )
+
+
+@app.get("/requirement/search/")
+def search_requirements(
+    query: str = Query(None, description="Search term to match across fields"),
+    customer_name: str = Query(None, description="Filter by customer name"),
+    project_name : str = Query(None, description='Filter by project name'),
+    location: str = Query(None, description="Filter by location"),
+    assigned_person : str = Query(None, description="Filter by assigned person"),
+    start_date : datetime = Query(None, description="Start date created_at filter"),
+    end_date : datetime = Query(None, description="End date at created at filter"),
+):
+    search_filter = build_search_filter(
+        query=query,
+        customer_name=customer_name,
+        project_name=project_name,
+        location=location,
+        assigned_person=assigned_person,
+        start_date=start_date,
+        end_date=end_date
+    )
+    print("search_filter:", search_filter)
+    results = []
+    for doc in collection.find(search_filter).sort("created_at", -1):
+        results.append({
+            "id": str(doc["_id"]),
+            "project_name": doc["project_name"],
+            "customer_name": doc["customer_name"],
+            "location": doc.get("location", ""),
+            "assigned_person": doc.get("assigned_person", ""),
+            "created_at": doc.get("created_at", "")
+        })
+
+    return {
+        "count": len(results),
+        "results": results
+    }
+
 
 
 @app.get("/requirement/export/filtered/xlsx")
 def export_filtered_excel(
-    request: Request,
-    query: str = Query(None),
-    customer_name: str = Query(None),
-    project_name: str = Query(None),
-    location: str = Query(None),
-    assigned_person: str = Query(None),
-    start_date: str = Query(None),
-    end_date: str = Query(None),
+    query: str = Query(None, description="Search term to match across fields"),
+    customer_name: str = Query(None, description="Filter by customer name"),
+    project_name: str = Query(None, description="Filter by project name"),
+    location: str = Query(None, description="Filter by location"),
+    assigned_person: str = Query(None, description="Filter by assigned person"),
+    start_date: datetime = Query(None, description="Start date for created_at filter"),
+    end_date: datetime = Query(None, description="End date for created_at filter"),
+    token: str = Query(..., description="JWT token for authentication"),
     Authorize: AuthJWT = Depends()
 ):
     try:
-        try:
-            Authorize.jwt_required()
-        except:
-            token = request.query_params.get("token")
-            if token:
-                Authorize.jwt_required("access", token=token)
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail='Missing Token'
-                )
-        start_date_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
-        end_date_dt = datetime.strptime(end_date, "%Y-%m-%d") if end_date else None
+        Authorize.jwt_required("access", token=token)
+        current_user = Authorize.get_jwt_subject()
             
         search_filter = build_search_filter(
             query=query,
@@ -466,8 +506,8 @@ def export_filtered_excel(
             project_name=project_name,
             location=location,
             assigned_person=assigned_person,
-            start_date=start_date_dt,
-            end_date=end_date_dt
+            start_date=start_date,
+            end_date=end_date
         )
 
         docs = list(collection.find(search_filter).sort("created_at", -1))
@@ -539,102 +579,73 @@ def export_filtered_excel(
         os.makedirs(EXPORT_DIR, exist_ok=True)
         wb.save(path)
         
-        return FileResponse(path, filename=filename, headers={"Content-Disposition": f"attachment; filename={filename}"})
-    
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=f"Invalid date format. Use YYYY-MM-DD: {str(e)}")
-    
+        return FileResponse(path, filename=filename)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Export Failed: {str(e)}"
         )
 
 
-
 @app.get('/admin', response_class=HTMLResponse)
-async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get_superadmin)):
+async def admin_dashboard(request: Request, current_user: UserInDB=Depends(get_superadmin)):
     try:
-
-        print("current user in dashboard:", current_user)
-        
-        user = users_collection.find_one({"username": current_user.username})
-        print(user,  type(user))
+        print("current_user:", current_user)
+        user = users_collection.find_one({"username": current_user})
         if not user or user.get("role") != "superadmin":
-            context = {
-                "request": request,
-                "local_ip": local_ip,
-                "error": "You need superadmin privileges to access this page"
-            }
-            return templates.TemplateResponse("admin/users.html", context, status_code=403)
+            raise HTTPException(status_code=403, detail="Superadmin access required")
         
         context = {
             "request": request,
-            "local_ip": local_ip,
+            "local_ip": local_ip
         }
         return templates.TemplateResponse("admin/users.html", context)
         
-    except HTTPException as e:
-        # Handle the case where the user is not authenticated
-        if e.status_code == status.HTTP_401_UNAUTHORIZED:
-            context = {
-                "request": request,
-                "error": "Please login to access this page",
-                "local_ip": local_ip
-            }
-            return templates.TemplateResponse("index1.html", context, status_code=401)
-        # Handle other cases
-        context = {
-            "request": request,
-            "error": str(e.detail),
-            "local_ip": local_ip
-        }
-        return templates.TemplateResponse("index1.html", context, status_code=e.status_code)
     except Exception as e:
         print(f"Admin dashboard error: {str(e)}")
         context = {
             "request": request,
-            "error": "An error occurred while accessing this page",
+            "error": "You need to login as superadmin to access this page",
             "local_ip": local_ip
         }
-        return templates.TemplateResponse("index1.html", context, status_code=500)
+        return templates.TemplateResponse("index1.html", context, status_code=403)
 
 
-@app.get("/users", response_model=List[UserOut])
-async def get_all_users(current_user: UserInDB = Depends(get_superadmin)):
-    users = list(users_collection.find({}, {"_id": 0,"password": 0}))
-    return users
+@app.get("/admin/users/", response_model=UserListResponse)
+async def list_users(
+    request: Request,
+    role: str = Depends(get_superadmin)  # Will automatically get the request
+):
+    users = list(users_collection.find({}, {"hashed_password": 0}))
+    return {"users": users}
 
-@app.post("/users", response_model=UserOut)
-async def create_user(user: UserCreate, current_user: UserInDB = Depends(get_superadmin)):
-    if users_collection.find_one({"username": user.username}):
-        raise HTTPException(status_code=400, detail="Username already exists")
+@app.post("/admin/users/", response_model=User)
+async def create_user_admin(
+    user_data: AdminUserCreate,
+    current_user: User = Depends(get_superadmin)
+):
+    existing_user = users_collection.find_one({"$or": [{"username": user_data.username}, {"email": user_data.email}]})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username or email already registered")
     
-    hashed_pwd = get_password_hash(user.password)
-    user_dict = user.dict()
-    user_dict['hashed_password'] = hashed_pwd
+    hashed_password = get_password_hash(user_data.password)
+    user_dict = user_data.dict()
+    user_dict['hashed_password'] = hashed_password
     del user_dict['password']
+    
     users_collection.insert_one(user_dict)
     return user_dict
 
-@app.put("/users/{username}")
-async def update_user(username: str, user: UserUpdate, current_user: UserInDB = Depends(get_superadmin)):
-    update_data = {k: v for k, v in user.dict().items() if v is not None}
-    if "password" in update_data:
-        update_data["hashed_password"] = get_password_hash(update_data.pop("password"))
-    
-    result = users_collection.update_one({"username": username}, {"$set": update_data})
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"msg": "User updated successfully"}
-
-@app.delete("/users/{username}")
+@app.delete("/admin/users/{username}")
 async def delete_user(username: str, current_user: UserInDB = Depends(get_superadmin)):
+    if username == "superadmin":
+        raise HTTPException(status_code=400, detail="Cannot delete superadmin")
+    
     result = users_collection.delete_one({"username": username})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"msg": "User deleted"}
-
+    return {"message": "User deleted successfully"}
 
 if __name__ == "__main__":
+    
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

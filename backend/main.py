@@ -250,17 +250,26 @@ def refresh(Authorize: AuthJWT = Depends()):
     try:
         Authorize.jwt_refresh_token_required()
         current_user = Authorize.get_jwt_subject()
+        print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++", current_user)
 
         user = users_collection.find_one({"username": current_user})
-        if not user or user.get("refresh_token") != Authorize.get_jwt_subject():
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid refresh token"
+                detail="User not found"
             )
+        
+        if user.get("refresh_token") != Authorize.jwt_refresh_token_required():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid refresh token'
+            )
+        print("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]",user)
+
         new_access_token = Authorize.create_access_token(subject=current_user)
         new_refresh_token = Authorize.create_refresh_token(subject=current_user)
         users_collection.update_one({"username": current_user}, {"$set": {"refresh_token": new_refresh_token}})
-
+        print("Updated")
         return {
             "access_token": new_access_token,
             "refresh_token": new_refresh_token

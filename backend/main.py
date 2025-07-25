@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, status
+from fastapi import Depends, FastAPI, Form, HTTPException, Header, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -123,9 +123,21 @@ def get_current_user(Authorize: AuthJWT = Depends()):
         Authorize.jwt_required() 
     except MissingTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing access token")
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-
+    except JWTDecodeError:
+        try:
+            Authorize.jwt_refresh_token_required()
+            current_user = Authorize.get_jwt_subject()
+            new_access_token = Authorize.create_access_token(subject=current_user)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Token Refresh',
+                headers={"X-New-Access-Token": new_access_token}
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid Token. Please login again.'
+            )
     current_user = Authorize.get_jwt_subject()
     return current_user
     
@@ -134,8 +146,6 @@ async def get_superadmin(Authorize: AuthJWT = Depends()):
         Authorize.jwt_required()
         username = Authorize.get_jwt_subject()
         user_data = Authorize.get_raw_jwt()
-
-        print("user_data:", user_data)
         
         user = users_collection.find_one({"username": username})
         if not user or user.get("role") != "superadmin":
@@ -153,11 +163,20 @@ async def get_superadmin(Authorize: AuthJWT = Depends()):
         )
         
     except JWTDecodeError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Your session has expired. Please login again."
-        )
-
+        try:
+            Authorize.jwt_refresh_token_required()
+            current_user = Authorize.get_jwt_subject()
+            new_access_token = Authorize.create_access_token(subject=current_user)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token refreshed",
+                headers={"X-New-Access-Token": new_access_token}
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token. Please login again."
+            )
 
 @app.get('/register', response_class=HTMLResponse)
 def register(request: Request):
@@ -194,8 +213,12 @@ async def login(username: str = Form(...), password: str = Form(...), Authorize:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Incorrect username or password')
 
     access_token = Authorize.create_access_token(subject=username)
+    refresh_token = Authorize.create_refresh_token(subject=username)
+
+    users_collection.update_one({"username": username}, {"$set": {"refresh_token": refresh_token}})
     return {
         "access_token": access_token,
+        "refresh_token": refresh_token,
         "role": user.get('role'),
         "token_type": "bearer",
         "redirect_url": "/" if user['role'] == 'superadmin' else '/'
@@ -203,8 +226,14 @@ async def login(username: str = Form(...), password: str = Form(...), Authorize:
 
 
 @app.get('/logout')
-def logout():
-    return {"msg": "Successfully logged out"}
+def logout(Authorize: AuthJWT = Depends()):
+    try:
+        current_user = Authorize.get_jwt_subject()
+        users_collection.find_one({"username": current_user}, {"$unset": {"refresh_token": ""}})
+        Authorize.unset_jwt_cookies()
+        return {"msg": "Successfully logged out"}
+    except Exception:
+        return {"msg": "Successfully logged out"}
 
 @app.get('/protected')
 async def protected_route(current_user: User = Depends(get_current_user)):
@@ -214,11 +243,43 @@ async def protected_route(current_user: User = Depends(get_current_user)):
 async def admin_route(superadmin: User = Depends(get_superadmin)):
     return {"Message": "Welcome Super Admin!"}
 
+@app.post("/refresh")
+def refresh(Authorize: AuthJWT = Depends(), authorization: str = Header(None)):
+    try:
+        Authorize.jwt_refresh_token_required()
+        current_user = Authorize.get_jwt_subject()
+
+        user = users_collection.find_one({"username": current_user})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        if authorization is None or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="No refresh token provided")
+        
+        authorization_refresh_token = authorization.split(" ")[1]
+        
+        if user.get("refresh_token") != authorization_refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid refresh token'
+            )
+
+        new_access_token = Authorize.create_access_token(subject=current_user)
+        
+        return {
+            "access_token": new_access_token,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid refresh token"
+        )
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
 
-    print("local_ip:", local_ip)
     context = {
         "request": request,
         "local_ip": local_ip,
@@ -344,7 +405,6 @@ async def export_pdf(
             media_type='application/pdf'
         )
     except Exception as e:
-        print(f"PDF export error: {str(e)}")
         error_detail = "Invalid or expired token" if "token" in str(e).lower() else str(e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -552,12 +612,8 @@ def export_filtered_excel(
 
 @app.get('/admin', response_class=HTMLResponse)
 async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get_superadmin)):
-    try:
-
-        print("current user in dashboard:", current_user)
-        
+    try:        
         user = users_collection.find_one({"username": current_user.username})
-        print(user,  type(user))
         if not user or user.get("role") != "superadmin":
             context = {
                 "request": request,
@@ -573,7 +629,6 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
         return templates.TemplateResponse("admin/users.html", context)
         
     except HTTPException as e:
-        # Handle the case where the user is not authenticated
         if e.status_code == status.HTTP_401_UNAUTHORIZED:
             context = {
                 "request": request,
@@ -581,7 +636,6 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
                 "local_ip": local_ip
             }
             return templates.TemplateResponse("index1.html", context, status_code=401)
-        # Handle other cases
         context = {
             "request": request,
             "error": str(e.detail),
@@ -589,7 +643,6 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
         }
         return templates.TemplateResponse("index1.html", context, status_code=e.status_code)
     except Exception as e:
-        print(f"Admin dashboard error: {str(e)}")
         context = {
             "request": request,
             "error": "An error occurred while accessing this page",

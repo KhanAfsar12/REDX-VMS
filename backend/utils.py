@@ -1,12 +1,9 @@
 from datetime import datetime, timedelta
-import os
 import re
-import math
 from typing import List, Optional
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from schema import RequirementResponse
-from jose import JWTError, jwt
 
 class Settings(BaseModel):
     authjwt_secret_key: str = "afsarkhan$$@#656"
@@ -85,7 +82,6 @@ def calculate_cpu(total_cameras, total_bitrate_mbps, camera_configs:List):
         (1.3 if cam['codec'] in ['h256', 'h265+'] else 1)
         for cam in camera_configs
     ) / len(camera_configs)
-    # print("complexity:", complexity)
     if total_cameras <= 16:
         if complexity < 1.5:
             return "4-core"

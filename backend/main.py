@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, status
+from fastapi import Depends, FastAPI, Form, HTTPException, Header, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -146,8 +146,6 @@ async def get_superadmin(Authorize: AuthJWT = Depends()):
         Authorize.jwt_required()
         username = Authorize.get_jwt_subject()
         user_data = Authorize.get_raw_jwt()
-
-        print("user_data:", user_data)
         
         user = users_collection.find_one({"username": username})
         if not user or user.get("role") != "superadmin":
@@ -246,11 +244,10 @@ async def admin_route(superadmin: User = Depends(get_superadmin)):
     return {"Message": "Welcome Super Admin!"}
 
 @app.post("/refresh")
-def refresh(Authorize: AuthJWT = Depends()):
+def refresh(Authorize: AuthJWT = Depends(), authorization: str = Header(None)):
     try:
         Authorize.jwt_refresh_token_required()
         current_user = Authorize.get_jwt_subject()
-        print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++", current_user)
 
         user = users_collection.find_one({"username": current_user})
         if not user:
@@ -258,21 +255,21 @@ def refresh(Authorize: AuthJWT = Depends()):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found"
             )
+        if authorization is None or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="No refresh token provided")
         
-        if user.get("refresh_token") != Authorize.jwt_refresh_token_required():
+        authorization_refresh_token = authorization.split(" ")[1]
+        
+        if user.get("refresh_token") != authorization_refresh_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid refresh token'
             )
-        print("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]",user)
 
         new_access_token = Authorize.create_access_token(subject=current_user)
-        new_refresh_token = Authorize.create_refresh_token(subject=current_user)
-        users_collection.update_one({"username": current_user}, {"$set": {"refresh_token": new_refresh_token}})
-        print("Updated")
+        
         return {
             "access_token": new_access_token,
-            "refresh_token": new_refresh_token
         }
     except Exception as e:
         raise HTTPException(
@@ -283,7 +280,6 @@ def refresh(Authorize: AuthJWT = Depends()):
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
 
-    print("local_ip:", local_ip)
     context = {
         "request": request,
         "local_ip": local_ip,
@@ -409,7 +405,6 @@ async def export_pdf(
             media_type='application/pdf'
         )
     except Exception as e:
-        print(f"PDF export error: {str(e)}")
         error_detail = "Invalid or expired token" if "token" in str(e).lower() else str(e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -617,12 +612,8 @@ def export_filtered_excel(
 
 @app.get('/admin', response_class=HTMLResponse)
 async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get_superadmin)):
-    try:
-
-        print("current user in dashboard:", current_user)
-        
+    try:        
         user = users_collection.find_one({"username": current_user.username})
-        print(user,  type(user))
         if not user or user.get("role") != "superadmin":
             context = {
                 "request": request,
@@ -638,7 +629,6 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
         return templates.TemplateResponse("admin/users.html", context)
         
     except HTTPException as e:
-        # Handle the case where the user is not authenticated
         if e.status_code == status.HTTP_401_UNAUTHORIZED:
             context = {
                 "request": request,
@@ -646,7 +636,6 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
                 "local_ip": local_ip
             }
             return templates.TemplateResponse("index1.html", context, status_code=401)
-        # Handle other cases
         context = {
             "request": request,
             "error": str(e.detail),
@@ -654,7 +643,6 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
         }
         return templates.TemplateResponse("index1.html", context, status_code=e.status_code)
     except Exception as e:
-        print(f"Admin dashboard error: {str(e)}")
         context = {
             "request": request,
             "error": "An error occurred while accessing this page",

@@ -49,21 +49,21 @@
       background: white;
     }
 
-   .header-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
 
-.header-container {
-  border-bottom: 2px solid var(--primary-color);
-  padding-bottom: 10px;
-}
+    .header-container {
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 10px;
+    }
 
-.admin-dashboard {
-  margin-left: 20px;
-}
+    .admin-dashboard {
+      margin-left: 20px;
+    }
 
     .header {
       display: flex;
@@ -524,14 +524,14 @@
   <div class="container">
 
 
-<div class="header-container">
-  <div class="title-wrapper">
-    <h1>REDX VMS Requirement Portal</h1>
-  </div>
-  <div class="admin-dashboard" id="admin-dashboard">
-    <button id="createUserBtn" class="btn-secondary">Admin Dashboard</button>
-  </div>
-</div>
+    <div class="header-container">
+      <div class="title-wrapper">
+        <h1>REDX VMS Requirement Portal</h1>
+      </div>
+      <div class="admin-dashboard" id="admin-dashboard">
+        <button id="adminDashboard" class="btn-secondary">Admin Dashboard</button>
+      </div>
+    </div>
 
 
     <div class="tab-btns">
@@ -696,7 +696,7 @@
     const role = localStorage.getItem('role');
     const adminDashboardBtn = document.getElementById('admin-dashboard');
     const historyContainer = document.getElementById('history-btn');
-    if(role === 'user'){
+    if (role === 'user') {
       historyContainer.style.display = 'none';
       adminDashboardBtn.style.display = 'none';
     }
@@ -747,6 +747,7 @@
     function handleLogout() {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('role');
       window.location.href = '/login';
     }
 
@@ -766,7 +767,7 @@
           if (payload.sub) {
             currentUserSpan.textContent = `Logged in as ${payload.sub}`;
             const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
-            if (expiresIn > 60){
+            if (expiresIn > 60) {
               scheduleTokenRefresh(Math.floor(expiresIn / 60));
             }
           }
@@ -783,130 +784,127 @@
       }
     }
 
-async function refreshToken() {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (!refreshToken) {
+    async function refreshToken() {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (!refreshToken) {
         handleUnauthorized();
         return null;
-    }
+      }
 
-    try {
+      try {
         const response = await fetch(`${customHost}:8000/refresh`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${refreshToken}`
-            }
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${refreshToken}`
+          }
         });
 
         if (!response.ok) {
-            throw new Error("Token refresh failed");
+          throw new Error("Token refresh failed");
         }
 
         const data = await response.json();
-        
+
         // Store new tokens
         localStorage.setItem('access_token', data.access_token);
-        if (data.refresh_token) {
-            localStorage.setItem('refresh_token', data.refresh_token);
-        }
-        
+
         return data;
-    } catch (error) {
+      } catch (error) {
         console.error('Token refresh error:', error);
         handleUnauthorized();
         return null;
+      }
     }
-}
 
     // Generic function for authenticated API requests
-   async function makeAuthenticatedRequest(url, method = 'GET', body = null) {
-    const token = getToken();
-    const headers = {
+    async function makeAuthenticatedRequest(url, method = 'GET', body = null) {
+      const token = getToken();
+      const headers = {
         'Content-Type': 'application/json'
-    };
-    
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
+      };
 
-    try {
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      try {
         const options = {
-            method,
-            headers
+          method,
+          headers
         };
 
         if (body) {
-            options.body = JSON.stringify(body);
+          options.body = JSON.stringify(body);
         }
 
         let response = await fetch(url, options);
 
         // If token expired, try to refresh it
         if (response.status === 401) {
-            try {
-                const refreshResponse = await refreshToken();
-                if (!refreshResponse) {
-                    handleUnauthorized();
-                    return null;
-                }
-
-                // Retry original request with new token
-                headers['Authorization'] = `Bearer ${refreshResponse.access_token}`;
-                options.headers = headers;
-                response = await fetch(url, options);
-
-                if (!response.ok) {
-                    throw new Error("Request failed after token refresh");
-                }
-            } catch (refreshError) {
-                console.error("Token refresh failed:", refreshError);
-                handleUnauthorized();
-                return null;
+          try {
+            const refreshResponse = await refreshToken();
+            if (!refreshResponse) {
+              handleUnauthorized();
+              return null;
             }
+
+            // Retry original request with new token
+            headers['Authorization'] = `Bearer ${refreshResponse.access_token}`;
+            options.headers = headers;
+            response = await fetch(url, options);
+
+            if (!response.ok) {
+              throw new Error("Request failed after token refresh");
+            }
+          } catch (refreshError) {
+            console.error("Token refresh failed:", refreshError);
+            handleUnauthorized();
+            return null;
+          }
         }
 
         // Handle 403 Forbidden
         if (response.status === 403) {
-            const error = await response.json();
-            showToast(error.detail || 'You do not have permission to access this resource', 'error');
-            return null;
+          const error = await response.json();
+          showToast(error.detail || 'You do not have permission to access this resource', 'error');
+          return null;
         }
 
         // Handle other errors
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || "Request failed");
+          const error = await response.json();
+          throw new Error(error.detail || "Request failed");
         }
 
         // Check for new token in headers
         const newToken = response.headers.get('X-New-Access-Token');
         if (newToken) {
-            localStorage.setItem('access_token', newToken);
+          localStorage.setItem('access_token', newToken);
         }
 
         return await response.json();
-    } catch (error) {
+      } catch (error) {
         console.error("API request error:", error);
         showToast(error.message || "Request failed", "error");
         return null;
+      }
     }
-}
     //Atomatic token refresh 
     let refreshTimer = null;
 
-    function scheduleTokenRefresh(expiresInMinutes = 15){
+    function scheduleTokenRefresh(expiresInMinutes = 15) {
       const refreshTime = (expiresInMinutes - 1) * 60 * 1000;
-      if(refreshTimer){
+      if (refreshTimer) {
         clearTimeout(refreshTimer);
       }
 
-      refreshTimer = setTimeout(async() => {
+      refreshTimer = setTimeout(async () => {
         await refreshToken();
         const newToken = localStorage.getItem('access_token');
-        if(newToken){
+        if (newToken) {
           const payload = JSON.parse(atob(newToken.split('.')[1]));
           const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
-          if(expiresIn > 60){
+          if (expiresIn > 60) {
             scheduleTokenRefresh(Math.floor(expiresIn / 60));
           }
         }
@@ -1072,7 +1070,7 @@ async function refreshToken() {
     }
 
 
-    document.getElementById('createUserBtn').addEventListener('click', async () => {
+    document.getElementById('adminDashboard').addEventListener('click', async () => {
       const token = getToken();
 
       if (!token) {
@@ -1084,7 +1082,8 @@ async function refreshToken() {
       try {
         const userInfo = await makeAuthenticatedRequest(`${customHost}:8000/protected`);
         if (!userInfo) return;
-        const response = await fetch('/admin', {
+        let adminURL = '/admin'
+        const response = await fetch(adminURL, {
           method: 'GET',
           headers: {
             'Authorization': 'Bearer ' + token
@@ -1096,12 +1095,27 @@ async function refreshToken() {
           document.open();
           document.write(html);
           document.close();
-        } else if (response.status === 403) {
+        } else if (response.status === 401) {
+          const refreshData = await refreshToken();
+          if (!refreshData) return;
+
+          const newResponse = await fetch(adminURL, {
+            method: 'GET',
+            headers: {
+              'Authorization': 'Bearer ' + refreshData.access_token
+            }
+          });
+          if (newResponse.ok) {
+            const html = await newResponse.text();
+            document.open();
+            document.write(html);
+            document.close();
+          } else {
+            throw new Error("Failed to access admin dashboard after token refresh");
+          }
+        } else if(response.status === 403){
           const error = await response.json();
           showToast(error.detail || "Access denied. Only superadmin can view this page", "error");
-        } else if (response.status === 401) {
-          showToast("You are not authorized. Please login", "error");
-          window.location.href = '/login';
         } else {
           showToast("Something went wrong.", "error");
         }
@@ -1454,7 +1468,7 @@ async function refreshToken() {
     }
 
     async function exportAllData() {
-    try {
+      try {
         const exportBtn = document.querySelector("#exportAllBtn button");
         exportBtn.disabled = true;
         exportBtn.innerHTML = "Exporting...";
@@ -1465,31 +1479,31 @@ async function refreshToken() {
         // Add query parameters if they exist
         const params = new URLSearchParams();
         if (searchTerm) params.append('query', searchTerm);
-        
+
         if (params.toString()) {
-            url += `?${params.toString()}`;
+          url += `?${params.toString()}`;
         }
 
         const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${getToken()}`
-            }
+          headers: {
+            'Authorization': `Bearer ${getToken()}`
+          }
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Export failed');
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Export failed');
         }
 
         // Get filename from content-disposition header or create one
         const contentDisposition = response.headers.get('content-disposition');
         let filename = 'redx_all_requirements.xlsx';
-        
+
         if (contentDisposition) {
-            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-            if (filenameMatch && filenameMatch[1]) {
-                filename = filenameMatch[1];
-            }
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1];
+          }
         }
 
         const blob = await response.blob();
@@ -1503,20 +1517,20 @@ async function refreshToken() {
         a.remove();
 
         showToast("All data exported successfully", "success");
-    } catch (error) {
+      } catch (error) {
         console.error("Export error:", error);
         showToast(error.message || "Error exporting all data", "error");
-    } finally {
+      } finally {
         const exportBtn = document.querySelector("#exportAllBtn button");
         if (exportBtn) {
-            exportBtn.disabled = false;
-            exportBtn.innerHTML = "Export All";
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = "Export All";
         }
+      }
     }
-}
 
-async function exportFilteredData() {
-    try {
+    async function exportFilteredData() {
+      try {
         const exportBtn = document.querySelector("#exportFilteredBtn");
         exportBtn.disabled = true;
         exportBtn.innerHTML = "Exporting...";
@@ -1524,7 +1538,7 @@ async function exportFilteredData() {
         const searchTerm = document.getElementById("searchInput").value;
         const token = getToken();
         if (!token) {
-            throw new Error("Please login first");
+          throw new Error("Please login first");
         }
         let url = new URL(`${customHost}:8000/requirement/export/filtered/xlsx`);
 
@@ -1536,30 +1550,30 @@ async function exportFilteredData() {
         url.search = params.toString();
 
         const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
 
         if (!response.ok) {
-            // Try to parse error details
-            let errorMsg = 'Export failed';
-            try {
-                const errorData = await response.json();
-                errorMsg = errorData.detail || errorMsg;
-            } catch (e) {
-                console.error("Error parsing error response:", e);
-            }
-            throw new Error(errorMsg);
+          // Try to parse error details
+          let errorMsg = 'Export failed';
+          try {
+            const errorData = await response.json();
+            errorMsg = errorData.detail || errorMsg;
+          } catch (e) {
+            console.error("Error parsing error response:", e);
+          }
+          throw new Error(errorMsg);
         }
 
         const blob = await response.blob();
         const contentDisposition = response.headers.get('content-disposition');
         let filename = 'redx_report.xlsx'
 
-        if(contentDisposition){
+        if (contentDisposition) {
           const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
-          if(filenameMatch && filenameMatch[1]){
+          if (filenameMatch && filenameMatch[1]) {
             filename = filenameMatch[1];
           }
         }
@@ -1574,14 +1588,14 @@ async function exportFilteredData() {
         a.remove();
 
         showToast("Filtered data exported successfully", "success");
-    } catch (error) {
+      } catch (error) {
         console.error("Export error:", error);
         showToast(error.message || "Error exporting filtered data", "error");
-    } finally {
+      } finally {
         const exportBtn = document.querySelector("#exportFilteredBtn");
         if (exportBtn) {
-            exportBtn.disabled = false;
-            exportBtn.innerHTML = `
+          exportBtn.disabled = false;
+          exportBtn.innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                     <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
@@ -1589,8 +1603,8 @@ async function exportFilteredData() {
                 Export Filtered
             `;
         }
+      }
     }
-}
 
     function downloadJSON() {
       const data = {

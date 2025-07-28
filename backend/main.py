@@ -87,6 +87,8 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password : str
+    is_active : bool = False
+    created_by : Optional[str] = None
 
 class UserUpdate(BaseModel):
     email : Optional[str] = None
@@ -139,16 +141,56 @@ def get_current_user(Authorize: AuthJWT = Depends()):
                 detail='Invalid Token. Please login again.'
             )
     current_user = Authorize.get_jwt_subject()
+    print(current_user, type(current_user))
     return current_user
-    
-async def get_superadmin(Authorize: AuthJWT = Depends()):
+
+
+async def get_admin(Authorize: AuthJWT = Depends()):
     try:
         Authorize.jwt_required()
         username = Authorize.get_jwt_subject()
         user_data = Authorize.get_raw_jwt()
         
         user = users_collection.find_one({"username": username})
-        if not user or user.get("role") != "superadmin":
+        if not user or user.get("role") != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail='Super Admin privileges required'
+            )
+            
+        return UserInDB(**user)
+    
+    except MissingTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Please login to access this page"
+        )
+        
+    except JWTDecodeError:
+        try:
+            Authorize.jwt_refresh_token_required()
+            current_user = Authorize.get_jwt_subject()
+            new_access_token = Authorize.create_access_token(subject=current_user)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token refreshed",
+                headers={"X-New-Access-Token": new_access_token}
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token. Please login again."
+            )
+        
+    
+async def get_superadmin(Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_required()
+        username = Authorize.get_jwt_subject()
+        user_data = Authorize.get_raw_jwt()
+        roles = ["superadmin", "admin"]
+        user = users_collection.find_one({"username": username})
+        if not user or user.get("role") not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='Super Admin privileges required'
@@ -291,6 +333,7 @@ def home(request: Request):
 @app.post("/requirement", response_model=RequirementResponse)
 def create_requirement(req: RequirementRequest, current_user: User = Depends(get_current_user)):
     try:
+        print("current_user:", current_user)
         update_bitrate(req)
 
         uid = str(uuid4())
@@ -316,7 +359,8 @@ def create_requirement(req: RequirementRequest, current_user: User = Depends(get
             "created_at": datetime.utcnow(),
             "bandwidth": bandwidth,
             "storage_tb": calculate_storage(total_bitrate, max_retention, avg_record_hour), 
-            "server_spec": recommend_server(sum(cam.qty for cam in req.camera_configs), total_bitrate, round(total_bitrate, 2), max_retention, avg_record_hour, camera_configs)
+            "server_spec": recommend_server(sum(cam.qty for cam in req.camera_configs), total_bitrate, round(total_bitrate, 2), max_retention, avg_record_hour, camera_configs),
+            "created_by": current_user
         }
         collection.insert_one(doc)
         return RequirementResponse(**doc, id=uid)
@@ -412,9 +456,26 @@ async def export_pdf(
         )
 
 @app.get("/requirement/list/")
-def list_all_requirements(current_user: User = Depends(get_superadmin)):
+def list_all_requirements(current_user: User = Depends(get_current_user)):
+
+    user = users_collection.find_one({"username": current_user})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
     results = []
-    for doc in collection.find().sort("created_at", -1):
+    role = user["role"]
+
+    if role == 'user':
+        query = {"created_by": current_user}
+    elif role == 'admin':
+        users_created_by_admin = users_collection.find({"created_by": current_user})
+        users_created_by_admin = list(users_created_by_admin)
+        created_usernames = [user['username'] for user in users_created_by_admin]
+        created_usernames.append(current_user)
+        query = {"created_by": {"$in": created_usernames}}
+    elif role == "superadmin":
+        query = {}
+    print("Current User:", current_user)
+    for doc in collection.find(query).sort("created_at", -1):
         total_qty = sum(cam.get("qty", 1) for cam in doc.get('camera_configs', []))
         total_bitrate = doc.get('bandwidth', 0)
         total_bandwidth = round(total_bitrate * total_qty / 1024, 2)
@@ -613,15 +674,6 @@ def export_filtered_excel(
 @app.get('/admin', response_class=HTMLResponse)
 async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get_superadmin)):
     try:        
-        user = users_collection.find_one({"username": current_user.username})
-        if not user or user.get("role") != "superadmin":
-            context = {
-                "request": request,
-                "local_ip": local_ip,
-                "error": "You need superadmin privileges to access this page"
-            }
-            return templates.TemplateResponse("admin/users.html", context, status_code=403)
-        
         context = {
             "request": request,
             "local_ip": local_ip,
@@ -654,6 +706,7 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
 @app.get("/users", response_model=List[UserOut])
 async def get_all_users(current_user: UserInDB = Depends(get_superadmin)):
     users = list(users_collection.find({}, {"_id": 0,"password": 0}))
+    print(users)
     return users
 
 @app.post("/users", response_model=UserOut)
@@ -664,6 +717,8 @@ async def create_user(user: UserCreate, current_user: UserInDB = Depends(get_sup
     hashed_pwd = get_password_hash(user.password)
     user_dict = user.dict()
     user_dict['hashed_password'] = hashed_pwd
+    user_dict['is_active'] = user.is_active
+    user_dict['created_by'] = current_user.username
     del user_dict['password']
     users_collection.insert_one(user_dict)
     return user_dict

@@ -7,7 +7,7 @@ from schema import RequirementResponse
 
 class Settings(BaseModel):
     authjwt_secret_key: str = "afsarkhan$$@#656"
-    authjwt_access_token_expires: timedelta = timedelta(minutes=1)
+    authjwt_access_token_expires: timedelta = timedelta(minutes=30)
     authjwt_refresh_token_expires: timedelta = timedelta(days=7)
     authjwt_token_location: set = {"headers"}
     authjwt_refresh_token_enabled: bool = True

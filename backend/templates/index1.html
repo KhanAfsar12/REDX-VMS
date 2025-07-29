@@ -744,10 +744,13 @@
 
     // Handle logout
     function handleLogout() {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('role');
-      window.location.href = '/login';
+      showToast('You are logged out', 'danger');
+      setTimeout(() => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('role');
+        window.location.href = '/login';
+      }, 2000);
     }
 
     // Check authentication status

@@ -94,9 +94,10 @@ class UserUpdate(BaseModel):
     email : Optional[str] = None
     password : Optional[str] = None
     role : Optional[str] = None
+    is_active: bool
 
 class UserOut(UserBase):
-    pass
+    is_active: bool
 
 
 def create_superadmin():
@@ -141,7 +142,6 @@ def get_current_user(Authorize: AuthJWT = Depends()):
                 detail='Invalid Token. Please login again.'
             )
     current_user = Authorize.get_jwt_subject()
-    print(current_user, type(current_user))
     return current_user
 
 
@@ -333,7 +333,6 @@ def home(request: Request):
 @app.post("/requirement", response_model=RequirementResponse)
 def create_requirement(req: RequirementRequest, current_user: User = Depends(get_current_user)):
     try:
-        print("current_user:", current_user)
         update_bitrate(req)
 
         uid = str(uuid4())
@@ -474,7 +473,6 @@ def list_all_requirements(current_user: User = Depends(get_current_user)):
         query = {"created_by": {"$in": created_usernames}}
     elif role == "superadmin":
         query = {}
-    print("Current User:", current_user)
     for doc in collection.find(query).sort("created_at", -1):
         total_qty = sum(cam.get("qty", 1) for cam in doc.get('camera_configs', []))
         total_bitrate = doc.get('bandwidth', 0)
@@ -492,23 +490,29 @@ def list_all_requirements(current_user: User = Depends(get_current_user)):
 
 
 @app.get("/requirement/export/all/xlsx")
-def export_all_excel(
-    Authorize: AuthJWT = Depends(),
-    query: str = Query(None),
-    customer_name: str = Query(None),
-    project_name: str = Query(None),
-    location: str = Query(None),
-    assigned_person: str = Query(None),
-    start_date: datetime = Query(None),
-    end_date: datetime = Query(None)
-):
+def export_all_excel(Authorize: AuthJWT = Depends()):
     try:
+        query = {}
         Authorize.jwt_required()
         current_user = Authorize.get_jwt_subject()
-        
-        docs = list(collection.find())
-        if not docs:
-            raise HTTPException(status_code=404, detail="No requirements found")
+        user = users_collection.find_one({"username": current_user})
+        if user.get('role') == 'user':
+            docs = list(collection.find({'created_by': current_user}))
+            if not docs:
+                raise HTTPException(status_code=404, detail="No requirements found")
+        elif user.get('role') == 'admin':
+            users_created_by_admin = users_collection.find({"created_by": current_user})
+            users_created_by_admin = list(users_created_by_admin)
+            created_usernames = [user['username'] for user in users_created_by_admin]
+            created_usernames.append(current_user)
+            query = {"created_by": {"$in": created_usernames}}
+            docs = list(collection.find(query))
+            if not docs:
+                raise HTTPException(status_code=404, detail="No requirements found")
+        else:
+            docs = list(collection.find())
+            if not docs:
+                raise HTTPException(status_code=404, detail="No requirements found")
 
         wb = Workbook()
         ws = wb.active
@@ -590,9 +594,26 @@ def export_filtered_excel(
             end_date=end_date_dt
         )
 
-        docs = list(collection.find(search_filter).sort("created_at", -1))
-        if not docs:
-            raise HTTPException(status_code=404, detail="No requirements found matching the filters")
+        current_user = Authorize.get_jwt_subject()
+        user = users_collection.find_one({"username": current_user})
+        if user.get('role') == 'user':
+            docs = list(collection.find(search_filter | {'created_by': current_user}).sort("created_at", -1))
+            if not docs:
+                raise HTTPException(status_code=404, detail="No requirements found")
+            
+        elif user.get('role') == 'admin':
+            users_created_by_admin = users_collection.find({"created_by": current_user})
+            users_created_by_admin = list(users_created_by_admin)
+            created_usernames = [user['username'] for user in users_created_by_admin]
+            created_usernames.append(current_user)
+            created_filter = {"created_by": {"$in": created_usernames}}
+            docs = list(collection.find(search_filter | created_filter).sort("created_at", -1))
+            if not docs:
+                raise HTTPException(status_code=404, detail="No requirements found")
+        else:
+            docs = list(collection.find(search_filter).sort("created_at", -1))
+            if not docs:
+                raise HTTPException(status_code=404, detail="No requirements found matching the filters")
 
         wb = Workbook()
         ws = wb.active
@@ -677,6 +698,7 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
         context = {
             "request": request,
             "local_ip": local_ip,
+            "current_user": current_user
         }
         return templates.TemplateResponse("admin/users.html", context)
         
@@ -705,9 +727,11 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
 
 @app.get("/users", response_model=List[UserOut])
 async def get_all_users(current_user: UserInDB = Depends(get_superadmin)):
-    users = list(users_collection.find({}, {"_id": 0,"password": 0}))
-    print(users)
-    return users
+    if current_user.role == "admin":
+        users_created_by_admin = list(users_collection.find({"created_by": current_user.username}))
+        return users_created_by_admin
+    users_created_by_superadmin = list(users_collection.find({"role": {"$ne": "superadmin"}}, {"_id": 0,"password": 0}))
+    return users_created_by_superadmin
 
 @app.post("/users", response_model=UserOut)
 async def create_user(user: UserCreate, current_user: UserInDB = Depends(get_superadmin)):

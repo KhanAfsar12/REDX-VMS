@@ -356,7 +356,7 @@ def create_requirement(req: RequirementRequest, current_user: User = Depends(get
             "assigned_person": req.assigned_person,
             "camera_configs": camera_configs,
             "created_at": datetime.utcnow(),
-            "bandwidth": bandwidth,
+            "bandwidth": round(bandwidth, 2),
             "storage_tb": calculate_storage(total_bitrate, max_retention, avg_record_hour), 
             "server_spec": recommend_server(sum(cam.qty for cam in req.camera_configs), total_bitrate, round(total_bitrate, 2), max_retention, avg_record_hour, camera_configs),
             "created_by": current_user

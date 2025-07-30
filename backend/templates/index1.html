@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>REDX VMS Requirement Portal</title>
+  <title>VMS Calculator</title>
   <link rel="icon" type="image/x-icon" href="https://easemyai.com/wp-content/uploads/2024/08/redx-logo-web.webp">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <!-- AG Grid Community Version -->
@@ -103,6 +103,7 @@
       font-weight: 700;
       padding-bottom: 10px;
       margin-bottom: 10px;
+      color: var(--secondary-color);
     }
 
     h2 {
@@ -142,6 +143,18 @@
       outline: none;
       border-color: var(--secondary-color);
       box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
+    }
+
+    .navbar-nav {
+      color: var(--dark-color);
+      font-weight: 500;
+      font-size: 16px;
+    }
+
+    #currentUser {
+      color: var(--dark-color);
+      font-weight: 500;
+      font-size: 16px;
     }
 
     button {
@@ -424,6 +437,50 @@
       flex-wrap: wrap;
     }
 
+    /* Firefox में spinner controls को दिखाने के लिए */
+    input[type="number"] {
+      -moz-appearance: initial !important;
+      /* यह line Firefox में arrows दिखाएगी */
+    }
+
+    /* Chrome/Safari/Edge के लिए spinner controls का styling */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: initial;
+      opacity: 1;
+      margin: 0;
+      position: relative;
+      right: 2px;
+      height: 20px;
+    }
+
+    /* Firefox के लिए spinner controls का styling */
+    input[type="number"]::-moz-inner-spin-button,
+    input[type="number"]::-moz-outer-spin-button {
+      -moz-appearance: initial !important;
+      opacity: 1;
+      margin: 0;
+      position: relative;
+      right: 2px;
+      height: 20px;
+    }
+
+    /* Common styling for all browsers */
+    input[type="number"] {
+      padding: 8px 12px;
+      border: 1px solid var(--gray-medium);
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    /* Focus state styling */
+    input[type="number"]:focus {
+      border-color: var(--secondary-color);
+      box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
+      outline: none;
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
       .container {
@@ -500,9 +557,9 @@
 <body>
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
     <div class="container">
-      <a class="navbar-brand" href="#">
+      <!-- <a class="navbar-brand" href="#">
         <img src="{{ url_for('static', path='img/REDX Logo.png') }}" alt="REDX Logo" height="30" class="me-2">
-      </a>
+      </a> -->
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -526,7 +583,7 @@
 
     <div class="header-container">
       <div class="title-wrapper">
-        <h1>REDX VMS Requirement Portal</h1>
+        <h1>VMS Calculator</h1>
       </div>
       <div class="admin-dashboard" id="admin-dashboard">
         <button id="adminDashboard" class="btn-secondary">Admin Dashboard</button>
@@ -974,50 +1031,60 @@
       });
 
       row.innerHTML = `
-        <td></td>
-        <td>
-          <select data-field='resolution' class='small-input'>
-            ${resolutionOptions.map(opt =>
+    <td></td>
+    <td>
+      <select data-field='resolution' class='small-input'>
+        ${resolutionOptions.map(opt =>
         `<option value="${opt}" ${data.resolution === opt ? 'selected' : ''}>${opt}</option>`
       ).join('')}
-          </select>
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='fps' min="1" max="60" 
-                value='${data.fps || 15}' />
-        </td>
-        <td>
-          <select data-field='codec' class='small-input'>
-            ${codecOptions.map(opt =>
+      </select>
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='fps' min="1" max="60" 
+            value='${data.fps || 15}' 
+            onkeydown="return handleNumberKeyDown(event)"
+            oninput="handleNumberInput(this)" />
+    </td>
+    <td>
+      <select data-field='codec' class='small-input'>
+        ${codecOptions.map(opt =>
         `<option value="${opt}" ${data.codec === opt ? 'selected' : ''}>${opt}</option>`
       ).join('')}
-          </select>
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='record_hour' 
-                min="1" max="24" value='${data.record_hour || 1}' />
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='retention_days' min="1" 
-                value='${data.retention_days || 30}' />
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='qty' min="1" 
-                value='${data.qty || 1}' />
-        </td>
-        <td>
-          <input class='small-input' type='number' data-field='bitrate_kbps' min="100" 
-                value='${data.bitrate_kbps || ""}' placeholder="Auto" />
-        </td>
-        <td>
-          <button type='button' class="btn-danger" onclick='removeRow(this)'>
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-            </svg>
-          </button>
-        </td>
-      `;
+      </select>
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='record_hour' 
+            min="1" max="24" value='${data.record_hour || 1}' 
+            onkeydown="return handleNumberKeyDown(event)"
+            oninput="handleNumberInput(this)" />
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='retention_days' min="1" 
+            value='${data.retention_days || 30}' 
+            onkeydown="return handleNumberKeyDown(event)"
+            oninput="handleNumberInput(this)" />
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='qty' min="1" 
+            value='${data.qty || 1}' 
+            onkeydown="return handleNumberKeyDown(event)"
+            oninput="handleNumberInput(this)" />
+    </td>
+    <td>
+      <input class='small-input' type='number' data-field='bitrate_kbps' min="100" 
+            value='${data.bitrate_kbps || ""}' placeholder="Auto" 
+            onkeydown="return handleNumberKeyDown(event)"
+            oninput="handleNumberInput(this); this.placeholder=''" />
+    </td>
+    <td>
+      <button type='button' class="btn-danger" onclick='removeRow(this)'>
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+          <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+        </svg>
+      </button>
+    </td>
+  `;
 
       row.children[0].appendChild(brandSelect);
       tbody.appendChild(row);
@@ -1045,6 +1112,62 @@
       }
     }
 
+    function handleNumberKeyDown(event) {
+      // Allow: backspace (8), tab (9), enter (13), escape (27), delete (46)
+      if ([8, 9, 13, 27, 46].includes(event.keyCode)) {
+        return true;
+      }
+
+      // Allow: Ctrl+A (65), Ctrl+C (67), Ctrl+V (86), Ctrl+X (88)
+      if ((event.ctrlKey || event.metaKey) && [65, 67, 86, 88].includes(event.keyCode)) {
+        return true;
+      }
+
+      // Allow: home (36), end (35), left arrow (37), up arrow (38), right arrow (39), down arrow (40)
+      if ([35, 36, 37, 38, 39, 40].includes(event.keyCode)) {
+        return true;
+      }
+
+      // Allow only numbers (0-9) and numpad numbers (96-105)
+      const isNumber = (event.keyCode >= 48 && event.keyCode <= 57) ||
+        (event.keyCode >= 96 && event.keyCode <= 105);
+
+      if (!isNumber) {
+        event.preventDefault();
+        return false;
+      }
+
+      return true;
+    }
+
+    function handleNumberInput(inputElement) {
+      // Get current value
+      let value = inputElement.value;
+
+      // Remove any non-numeric characters
+      value = value.replace(/[^0-9]/g, '');
+
+      // Convert to number
+      let numValue = parseInt(value) || 0;
+
+      // Apply min/max constraints
+      const min = parseInt(inputElement.min) || 1;
+      const max = parseInt(inputElement.max) || Infinity;
+
+      if (numValue < min) {
+        numValue = min;
+      } else if (numValue > max) {
+        numValue = max;
+      }
+
+      // Update the input value
+      inputElement.value = numValue;
+
+      // Trigger change event for any dependent calculations
+      const event = new Event('change');
+      inputElement.dispatchEvent(event);
+    }
+
     function removeRow(btn) {
       const row = btn.closest("tr");
       row.classList.add("removing");
@@ -1060,13 +1183,13 @@
         return {
           name: cells[0].querySelector("select").value,
           resolution: cells[1].querySelector("select").value,
-          fps: parseInt(cells[2].querySelector("input").value),
+          fps: parseInt(cells[2].querySelector("input").value.trim()) || 15,
           codec: cells[3].querySelector("select").value,
-          record_hour: parseInt(cells[4].querySelector("input").value),
-          retention_days: parseInt(cells[5].querySelector("input").value),
-          qty: parseInt(cells[6].querySelector("input").value),
-          bitrate_kbps: cells[7].querySelector("input").value ?
-            parseInt(cells[7].querySelector("input").value) : null
+          record_hour: parseInt(cells[4].querySelector("input").value.trim()) || 1,
+          retention_days: parseInt(cells[5].querySelector("input").value.trim()) || 30,
+          qty: parseInt(cells[6].querySelector("input").value.trim()) || 1,
+          bitrate_kbps: cells[7].querySelector("input").value.trim() ?
+            parseInt(cells[7].querySelector("input").value.trim()) : null
         };
       });
     }
@@ -1115,7 +1238,7 @@
           } else {
             throw new Error("Failed to access admin dashboard after token refresh");
           }
-        } else if(response.status === 403){
+        } else if (response.status === 403) {
           const error = await response.json();
           showToast(error.detail || "Access denied. Only superadmin can view this page", "error");
         } else {
@@ -1131,6 +1254,27 @@
     // Form Submission
     async function handleFormSubmit(e) {
       e.preventDefault();
+
+      const numberInputs = document.querySelectorAll('input[type="number"]');
+      let isValid = true;
+
+      numberInputs.forEach(input => {
+        const value = parseInt(input.value);
+        const min = parseInt(input.min) || 1;
+        const max = parseInt(input.max) || Infinity;
+
+        if (isNaN(value) || value < min || value > max) {
+          input.style.borderColor = 'var(--danger-color)';
+          isValid = false;
+        } else {
+          input.style.borderColor = '';
+        }
+      });
+
+      if (!isValid) {
+        showToast("Please enter valid number in all fields", "error");
+        return;
+      }
 
       const customerName = document.getElementById("customer_name").value;
       const projectName = document.getElementById("project_name").value;
@@ -1618,7 +1762,7 @@
       };
 
       if (!data.customer_name || !data.project_name) {
-        showToast("Please fill in customer and project details", "warning");
+        showToast("Please fill in project details", "warning");
         return;
       }
 

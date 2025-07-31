@@ -17,10 +17,14 @@ import os
 import socket
 from schema import RequirementRequest, RequirementResponse, UserCreate, UserLogin
 from utils import Settings, build_search_filter, calculate_storage, estimate_bitrate, get_password_hash, recommend_server, update_bitrate, verify_password
+from dotenv import load_dotenv
 
 hostname = socket.gethostname()
 local_ip = socket.gethostbyname(hostname)
 
+load_dotenv()
+MONGO_URI = os.getenv("MONGO_URI")
+DB_NAME = os.getenv("DB_NAME")
 
 app = FastAPI()
 
@@ -33,8 +37,8 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
-client = MongoClient("mongodb://192.168.1.67:27017")
-db = client["redx_vms"]
+client = MongoClient(MONGO_URI)
+db = client[DB_NAME]
 collection = db["requirements"]
 users_collection = db["users"]
 EXPORT_DIR = "exports"
@@ -109,7 +113,7 @@ def create_superadmin():
             "hashed_password": hashed_password,
             "email": "superadmin@gmail.com",
             "full_name": "Super Admin",
-            "disabled": False,
+            "is_active": True,
             "role": "superadmin"
         })
 create_superadmin()
@@ -195,7 +199,6 @@ async def get_superadmin(Authorize: AuthJWT = Depends()):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail='Super Admin privileges required'
             )
-            
         return UserInDB(**user)
     
     except MissingTokenError:
@@ -356,7 +359,7 @@ def create_requirement(req: RequirementRequest, current_user: User = Depends(get
             "assigned_person": req.assigned_person,
             "camera_configs": camera_configs,
             "created_at": datetime.utcnow(),
-            "bandwidth": bandwidth,
+            "bandwidth": round(bandwidth, 2),
             "storage_tb": calculate_storage(total_bitrate, max_retention, avg_record_hour), 
             "server_spec": recommend_server(sum(cam.qty for cam in req.camera_configs), total_bitrate, round(total_bitrate, 2), max_retention, avg_record_hour, camera_configs),
             "created_by": current_user

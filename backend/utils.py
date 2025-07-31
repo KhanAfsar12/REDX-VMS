@@ -193,6 +193,5 @@ def build_search_filter(
 
 def update_bitrate(req: RequirementResponse):
     for cam in req.camera_configs:
-        print(req)
         if cam.bitrate_kbps is None:
             cam.bitrate_kbps = int(estimate_bitrate(cam.resolution, cam.fps, cam.codec))

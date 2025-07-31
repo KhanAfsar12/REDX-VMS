@@ -42,6 +42,11 @@
       font-size: 16px;
     }
 
+    #navbarNav{
+      margin-bottom: 30px;
+      height: 10px;
+    }
+
     #modal-header, .UserCreate{
       background-color: var(--secondary-color) !important;
       color: var(--gray-medium);
@@ -140,12 +145,13 @@
     
     .search-box {
       position: relative;
-      margin-bottom: 20px;
+      margin: 12px 0px 12px 0px;
+      width: 340px;
     }
     
     .search-box i {
       position: absolute;
-      top: 12px;
+      top: 8px;
       left: 12px;
       color: #d1d3e2;
     }
@@ -227,7 +233,7 @@
   </div>
 
   <div class="card shadow mb-4">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+    <div class="card-header py-0 d-flex justify-content-between align-items-center">
       <h6 class="m-0 font-weight-bold text-white">User List</h6>
       <div class="search-box">
         <i class="bi bi-search"></i>
@@ -369,12 +375,107 @@ let token = localStorage.getItem('access_token');
 let refreshTokens = localStorage.getItem('refresh_token');
 let roles = localStorage.getItem('role');
 let gridApis = null;
+let refreshTimers = null;
 
 // DOM elements
 const quickFilterInput = document.getElementById('quickFilterInput');
 const logoutBtn = document.getElementById('logoutBtn');
 const currentUserSpan = document.getElementById('currentUser');
 const successToast = new bootstrap.Toast(document.getElementById('successToast'));
+
+// Check authentication status
+function checkAuth() {
+  if (token) {
+    // User is authenticated
+    logoutBtn.innerHTML = '<i class="bi bi-box-arrow-right"></i> Logout';
+    logoutBtn.onclick = handleLogout;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.sub) {
+        currentUserSpan.textContent = `Logged in as: ${payload.sub}`;
+        const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
+        if (expiresIn > 60) {
+          scheduleTokenRefresh(Math.floor(expiresIn / 60));
+        }
+      }
+    } catch (e) {
+      console.error("Error decoding token", e);
+    }
+  } else {
+    // User is not authenticated
+    logoutBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Login';
+    logoutBtn.onclick = () => window.location.href = '/login';
+    currentUserSpan.textContent = '';
+  }
+}
+
+// Handle logout
+function handleLogout() {
+  showToast('You are logged out', 'danger');
+  setTimeout(() => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('role');
+    window.location.href = '/login';
+  }, 1000);
+}
+
+// Schedule token refresh
+function scheduleTokenRefresh(expiresInMinutes = 15) {
+  const refreshTime = (expiresInMinutes - 1) * 60 * 1000;
+  if (refreshTimers) {
+    clearTimeout(refreshTimers);
+  }
+
+  refreshTimers = setTimeout(async () => {
+    await refreshAccessToken();
+    const newToken = localStorage.getItem('access_token');
+    if (newToken) {
+      const payload = JSON.parse(atob(newToken.split('.')[1]));
+      const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
+      if (expiresIn > 60) {
+        scheduleTokenRefresh(Math.floor(expiresIn / 60));
+      }
+    }
+  }, refreshTime);
+}
+
+// Refresh token function
+async function refreshAccessToken() {
+  try {
+    const response = await fetch('/refresh', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${refreshTokens}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error("Token refresh failed");
+    }
+
+    const data = await response.json();
+    token = data.access_token;
+    localStorage.setItem('access_token', token);
+    return data;
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    handleUnauthorized();
+    return null;
+  }
+}
+
+// Handle unauthorized access
+function handleUnauthorized() {
+  showToast('Your session has expired. Please log in again.', 'danger');
+  setTimeout(() => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('role');
+    window.location.href = '/login';
+  }, 2000);
+}
 
 // Enhanced fetch function with token refresh
 async function authFetch(url, options = {}) {
@@ -394,130 +495,60 @@ async function authFetch(url, options = {}) {
     // If token expired, try to refresh it
     if (response.status === 401) {
       try {
-        const errorData = await response.json();
-        if (errorData.detail === 'Token Refresh') {
-          const newToken = response.headers.get('X-New-Access-Token');
-          if (newToken) {
-            // Store the new token
-            token = newToken;
-            localStorage.setItem('access_token', newToken);
-            
-            // Retry the original request with the new token
-            options.headers['Authorization'] = `Bearer ${newToken}`;
-            response = await fetch(url, options);
-            return response;
-          }
+        const refreshResponse = await refreshAccessToken();
+        if (!refreshResponse) {
+          handleUnauthorized();
+          return null;
         }
-      } catch (e) {
-        console.error('Error parsing error response:', e);
-      }
-      
-      // If we get here, refresh failed
-      handleUnauthorized();
-      return response;
-    }
-    
-    return response;
-  } catch (error) {
-    console.error('Fetch error:', error);
-    if (error.message === 'Failed to fetch') {
-      showToast('Network error. Please check your connection.', 'danger');
-    }
-    throw error;
-  }
-}
 
-// Refresh token function
-async function refreshAccessToken() {
-  try {
-    const response = await fetch('/refresh', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${refreshTokens}`,
-        'Content-Type': 'application/json'
-      }
-    });
+        // Retry original request with new token
+        options.headers['Authorization'] = `Bearer ${refreshResponse.access_token}`;
+        response = await fetch(url, options);
 
-    if (response.status === 401) {
-      // Refresh token is invalid or expired
-      handleUnauthorized();
+        if (!response.ok) {
+          throw new Error("Request failed after token refresh");
+        }
+      } catch (refreshError) {
+        console.error("Token refresh failed:", refreshError);
+        handleUnauthorized();
+        return null;
+      }
+    }
+
+    // Handle 403 Forbidden
+    if (response.status === 403) {
+      const error = await response.json();
+      showToast(error.detail || 'You do not have permission to access this resource', 'error');
       return null;
     }
 
+    // Handle other errors
     if (!response.ok) {
-      throw new Error('Failed to refresh token');
+      const error = await response.json();
+      throw new Error(error.detail || "Request failed");
     }
 
-    const data = await response.json();
-    if (!data.access_token) {
-      throw new Error('No access token in response');
+    // Check for new token in headers
+    const newToken = response.headers.get('X-New-Access-Token');
+    if (newToken) {
+      token = newToken;
+      localStorage.setItem('access_token', newToken);
     }
 
-    token = data.access_token;
-    localStorage.setItem('access_token', token);
-    return token;
+    return response;
   } catch (error) {
-    console.error('Error refreshing token:', error);
-    handleUnauthorized();
-    throw error;
+    console.error("API request error:", error);
+    showToast(error.message || "Request failed", "error");
+    return null;
   }
 }
-
-// Handle unauthorized access
-function handleUnauthorized() {
-  showToast('Your session has expired. Please log in again.', 'danger');
-  setTimeout(() => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('role');
-    token = null;
-    refreshTokens = null;
-    roles = null;
-    window.location.href = '/login';
-  }, 2000);
-}
-
-// Logout function
-logoutBtn.addEventListener('click', async () => {
-  try {
-    // Try to call logout endpoint, but proceed with cleanup even if it fails
-    try {
-      await authFetch('/logout', {
-        method: 'GET'
-      });
-    } catch (e) {
-      console.log('Logout API call failed, proceeding with client-side cleanup');
-    }
-    
-    showToast('You have been logged out', 'success');
-    
-    // Clear all auth-related data
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('role');
-    
-    token = null;
-    refreshTokens = null;
-    roles = null;
-    // Redirect to login page
-    window.location.href = '/login';
-  } catch (error) {
-    console.error('Error during logout:', error);
-    showToast('Error during logout', 'danger');
-  }
-});
 
 // Fetch current user info
 async function fetchCurrentUser() {
   try {
     const response = await authFetch('/protected');
     
-    if (response.status === 401) {
-      handleUnauthorized();
-      return;
-    }
-    
-    if (!response.ok) throw new Error('Failed to fetch current user');
+    if (!response) return;
     
     const userData = await response.json();
     currentUserSpan.textContent = `Logged in as: ${userData.message.split(' ')[1]}`;
@@ -532,12 +563,7 @@ async function fetchUsers() {
   try {
     const response = await authFetch('/users');
 
-    if(response.status === 401) {
-      handleUnauthorized();
-      return;
-    }
-    
-    if (!response.ok) throw new Error('Failed to fetch users');
+    if (!response) return;
     
     users = await response.json();
     setupGrid();
@@ -674,8 +700,7 @@ document.getElementById('addUserForm').addEventListener('submit', async (e) => {
       method: 'POST',
       body: JSON.stringify(user)
     });
-    if (response.status === 401) return handleUnauthorized();
-    if (!response.ok) throw new Error('Failed to add user');
+    if (!response) return;
 
     const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
     modal.hide();
@@ -714,8 +739,8 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
       method: 'PUT',
       body: JSON.stringify(updateData)
     });
-    if (response.status === 401) return handleUnauthorized();
-    if (!response.ok) throw new Error('Failed to update user');
+    if (!response) return;
+    
     bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
     await fetchUsers();
     showToast('User updated successfully!');
@@ -744,8 +769,8 @@ async function deleteUser(username) {
     const response = await authFetch(`/users/${username}`, {
       method: 'DELETE'
     });
-    if (response.status === 401) return handleUnauthorized();
-    if (!response.ok) throw new Error('Failed to delete user');
+    if (!response) return;
+    
     await fetchUsers();  // Will refresh and rebuild grid
     showToast('User deleted successfully!');
   } catch (error) {
@@ -755,14 +780,11 @@ async function deleteUser(username) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Check if we have both tokens
-  if (!token || !refreshToken) {
-    window.location.href = '/login';
-    return;
-  }
+  // Check authentication
+  checkAuth();
   
   // Verify tokens are not empty
-  if (token.trim() === '' || refreshTokens.trim() === '') {
+  if (!token || !refreshTokens || token.trim() === '' || refreshTokens.trim() === '') {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('role');
@@ -781,18 +803,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('editUserModal').addEventListener('hidden.bs.modal', () => {
     document.getElementById('editUserForm').reset();
   });
-
-  // Set up periodic token check (every 4.5 minutes - less than typical token expiry)
-  setInterval(async () => {
-    try {
-      const response = await authFetch('/protected');
-      if (response.status === 401) {
-        handleUnauthorized();
-      }
-    } catch (error) {
-      console.error('Token check failed:', error);
-    }
-  }, 4.5 * 60 * 1000); // 4.5 minutes
 });
 </script>
 

@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VMS Calculator</title>
-  <link rel="icon" type="image/x-icon" href="https://easemyai.com/wp-content/uploads/2024/08/redx-logo-web.webp">
+  <!-- <link rel="icon" type="image/x-icon" href="https://easemyai.com/wp-content/uploads/2024/08/redx-logo-web.webp"> -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <!-- AG Grid Community Version -->
   <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@29.3.5/dist/ag-grid-community.min.js"></script>
@@ -47,6 +47,7 @@
       margin-top: 30px;
       max-width: 1650px;
       background: white;
+      border-radius: 0.35rem 0.35rem 0 0 !important;
     }
 
     .header-container {
@@ -54,6 +55,8 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
+      padding: 1rem 1.35rem;
+      border-radius: 0.35rem 0.35rem 0 0 !important;
     }
 
     .header-container {
@@ -195,7 +198,7 @@
     }
 
     .btn-secondary:hover {
-      background-color: #31587a;
+      background-color: var(--secondary-color);
     }
 
     .btn-outline {
@@ -233,14 +236,17 @@
 
     table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       margin: 20px 0;
       font-size: 14px;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+      overflow: hidden;
     }
 
     th {
-      background-color: var(--accent-color);
+      background-color: var(--secondary-color);
       color: white;
       text-align: left;
       padding: 12px 10px;
@@ -266,6 +272,11 @@
       padding: 8px;
       border-radius: 4px;
       border: 1px solid var(--gray-medium);
+    }
+
+    #navbarNav{
+      margin-bottom: 30px;
+      height: 10px;
     }
 
     .summary {
@@ -298,6 +309,7 @@
       gap: 15px;
       margin-top: 25px;
       flex-wrap: wrap;
+      padding: 1rem 0rem;
     }
 
     .form-group {
@@ -313,7 +325,7 @@
     .admin-dashboard a {
       text-decoration: none;
       color: white;
-      background-color: VAR(--secondary-color);
+      background-color: var(--secondary-color);
       padding: 10px 20px;
       border-radius: 5px;
       display: inline-block;
@@ -381,7 +393,7 @@
     /* AG Grid custom styling */
     .ag-theme-alpine {
       --ag-border-color: var(--gray-medium);
-      --ag-header-background-color: var(--accent-color);
+      --ag-header-background-color: var(--secondary-color);
       --ag-header-foreground-color: white;
       --ag-odd-row-background-color: var(--gray-light);
       --ag-font-size: 14px;
@@ -807,7 +819,7 @@
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('role');
         window.location.href = '/login';
-      }, 2000);
+      }, 1000);
     }
 
     // Check authentication status
@@ -824,7 +836,7 @@
         try {
           const payload = JSON.parse(atob(token.split('.')[1]));
           if (payload.sub) {
-            currentUserSpan.textContent = `Logged in as ${payload.sub}`;
+            currentUserSpan.textContent = `Logged in as: ${payload.sub}`;
             const expiresIn = payload.exp - Math.floor(Date.now() / 1000);
             if (expiresIn > 60) {
               scheduleTokenRefresh(Math.floor(expiresIn / 60));
@@ -1196,54 +1208,38 @@
 
 
     document.getElementById('adminDashboard').addEventListener('click', async () => {
-      const token = getToken();
-
-      if (!token) {
-        showToast("Please login first", "error");
-        window.location.href = '/login';
-        return;
-      }
-
       try {
         const userInfo = await makeAuthenticatedRequest(`${customHost}:8000/protected`);
         if (!userInfo) return;
-        let adminURL = '/admin'
-        const response = await fetch(adminURL, {
+
+        const token = getToken();
+        if(!token){
+          showToast("Please login first", "error");
+          window.location.href = "/login";
+          return;
+        }
+        
+        let response = await fetch('/admin', {
           method: 'GET',
           headers: {
             'Authorization': 'Bearer ' + token
           }
         });
 
-        if (response.ok) {
-          const html = await response.text();
-          document.open();
-          document.write(html);
-          document.close();
-        } else if (response.status === 401) {
-          const refreshData = await refreshToken();
-          if (!refreshData) return;
-
-          const newResponse = await fetch(adminURL, {
-            method: 'GET',
-            headers: {
-              'Authorization': 'Bearer ' + refreshData.access_token
-            }
-          });
-          if (newResponse.ok) {
-            const html = await newResponse.text();
-            document.open();
-            document.write(html);
-            document.close();
+        if(!response.ok){
+          if(response.status === 403){
+            const error = await response.json();
+            showToast(error.detail || "Access denied. Only superadmin can view this page.", "error");
           } else {
-            throw new Error("Failed to access admin dashboard after token refresh");
+            showToast("Failed to load admin dashboard", "error");
           }
-        } else if (response.status === 403) {
-          const error = await response.json();
-          showToast(error.detail || "Access denied. Only superadmin can view this page", "error");
-        } else {
-          showToast("Something went wrong.", "error");
+          return;
         }
+
+        const html = await response.text();
+        document.open();
+        document.write(html);
+        document.close();
 
       } catch (error) {
         console.error("Error fetching admin page:", error);

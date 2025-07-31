@@ -701,7 +701,7 @@ async def admin_dashboard(request: Request, current_user: UserInDB = Depends(get
         context = {
             "request": request,
             "local_ip": local_ip,
-            "current_user": current_user
+            "user_role": current_user.role
         }
         return templates.TemplateResponse("admin/users.html", context)
         

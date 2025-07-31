@@ -274,7 +274,9 @@
             <select class="form-select" id="role" required>
               <option value="user">User</option>
               <option value="admin">Admin</option>
+              {% if user_role == "superadmin" %}
               <option value="superadmin">Superadmin</option>
+              {% endif %}
             </select>
           </div>
           <div class="mb-3 form-check">
@@ -311,7 +313,9 @@
             <select class="form-select" id="editRole" required>
               <option value="user">User</option>
               <option value="admin">Admin</option>
+              {% if user_role == "superadmin" %}
               <option value="superadmin">Superadmin</option>
+              {% endif %}
             </select>
           </div>
           <div class="mb-3">
@@ -417,7 +421,7 @@ function handleLogout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('role');
-    window.location.href = '/login';
+    window.location.href = '/';
   }, 1000);
 }
 

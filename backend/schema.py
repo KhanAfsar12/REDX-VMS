@@ -11,8 +11,6 @@ class CameraConfig(BaseModel):
     retention_days: int = Field(30, ge=1)
     qty: int = Field(1, ge=1)
     bitrate_kbps: Optional[int] = Field(None, ge=100)
-
-    
     
 class RequirementRequest(BaseModel):
     customer_name: str
@@ -28,7 +26,6 @@ class RequirementResponse(RequirementRequest):
     storage_tb: float
     server_spec: dict
 
-
 class UserCreate(BaseModel):
     username: str
     password: str
@@ -39,4 +36,51 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
-    
+
+class User(BaseModel):
+    username: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    disabled : Optional[bool] = False
+    role : str = 'user'
+
+class UserInDB(User):
+    hashed_password : str
+
+class Token(BaseModel):
+    access_token : str
+    token_type : str
+
+class TokenData(BaseModel):
+    username : Optional[str] = None
+    role : Optional[str] = None
+
+class AdminUserCreate(BaseModel):
+    username: str
+    email: str
+    full_name: str
+    password: str
+    role: str = "user"
+    disabled: bool = False
+
+class UserListResponse(BaseModel):
+    users: List[User]
+
+class UserBase(BaseModel):
+    username: str
+    email : str
+    role : str
+
+class UserCreate(UserBase):
+    password : str
+    is_active : bool = False
+    created_by : Optional[str] = None
+
+class UserUpdate(BaseModel):
+    email : Optional[str] = None
+    password : Optional[str] = None
+    role : Optional[str] = None
+    is_active: bool
+
+class UserOut(UserBase):
+    is_active: bool

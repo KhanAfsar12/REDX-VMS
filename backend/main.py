@@ -15,7 +15,7 @@ from weasyprint import HTML
 from jinja2 import Environment, FileSystemLoader
 import os
 import socket
-from schema import RequirementRequest, RequirementResponse, UserCreate, UserLogin
+from schema import *
 from utils import Settings, build_search_filter, calculate_storage, estimate_bitrate, get_password_hash, recommend_server, update_bitrate, verify_password
 from dotenv import load_dotenv
 
@@ -53,57 +53,6 @@ static_dir = os.path.join(BASE_DIR, ".", "static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-class User(BaseModel):
-    username: str
-    email: Optional[str] = None
-    full_name: Optional[str] = None
-    disabled : Optional[bool] = False
-    role : str = 'user'
-
-class UserInDB(User):
-    hashed_password : str
-
-class Token(BaseModel):
-    access_token : str
-    token_type : str
-
-class TokenData(BaseModel):
-    username : Optional[str] = None
-    role : Optional[str] = None
-
-
-class AdminUserCreate(BaseModel):
-    username: str
-    email: str
-    full_name: str
-    password: str
-    role: str = "user"
-    disabled: bool = False
-
-class UserListResponse(BaseModel):
-    users: List[User]
-
-
-class UserBase(BaseModel):
-    username: str
-    email : str
-    role : str
-
-class UserCreate(UserBase):
-    password : str
-    is_active : bool = False
-    created_by : Optional[str] = None
-
-class UserUpdate(BaseModel):
-    email : Optional[str] = None
-    password : Optional[str] = None
-    role : Optional[str] = None
-    is_active: bool
-
-class UserOut(UserBase):
-    is_active: bool
-
-
 def create_superadmin():
     superadmin = users_collection.find_one({"username": "superadmin"})
     if not superadmin:
@@ -117,8 +66,6 @@ def create_superadmin():
             "role": "superadmin"
         })
 create_superadmin()
-
-
 
 
 @AuthJWT.load_config
@@ -302,7 +249,6 @@ def refresh(Authorize: AuthJWT = Depends(), authorization: str = Header(None)):
             )
         if authorization is None or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="No refresh token provided")
-        
         authorization_refresh_token = authorization.split(" ")[1]
         
         if user.get("refresh_token") != authorization_refresh_token:
@@ -324,7 +270,6 @@ def refresh(Authorize: AuthJWT = Depends(), authorization: str = Header(None)):
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-
     context = {
         "request": request,
         "local_ip": local_ip,
@@ -347,6 +292,7 @@ def create_requirement(req: RequirementRequest, current_user: User = Depends(get
                 bitrate_mbps = estimate_bitrate(cam.resolution, cam.fps, cam.codec)         
             total_bitrate = bitrate_mbps * cam.qty
             bandwidth+= total_bitrate
+            print(total_bitrate)
 
         max_retention = max(c.retention_days for c in req.camera_configs)
         avg_record_hour = max(c.record_hour for c in req.camera_configs)
@@ -388,7 +334,7 @@ def export_excel(id: str):
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "REDX VMS Requirement"
+    ws.title = "VMS Requirement"
 
     ws.append(["Customer", doc["customer_name"]])
     ws.append(["Project", doc["project_name"]])
@@ -411,7 +357,7 @@ def export_excel(id: str):
 
     path = os.path.join(EXPORT_DIR, f"requirement_{id}.xlsx")
     wb.save(path)
-    return FileResponse(path, filename=f"redx_report_{id}.xlsx")
+    return FileResponse(path, filename=f"vms_report_{id}.xlsx")
 
 
 @app.get("/requirement/{id}/export/pdf")
@@ -432,7 +378,7 @@ async def export_pdf(
         for cam in doc.get("camera_configs", []):
             quantity = cam.get('qty', 1)
             bitrate_kbps = cam.get('bitrate_kbps', 0)
-            cam["bandwidth"] = round(bitrate_kbps * quantity / 1024, 2)
+            cam["bandwidth"] = round(bitrate_kbps * quantity / 1000, 2)
 
         template = env.get_template("report_template.html")
         html_out = template.render(
@@ -447,7 +393,7 @@ async def export_pdf(
         
         return FileResponse(
             pdf_path,
-            filename=f"redx_report_{id}.pdf",
+            filename=f"vms_report_{id}.pdf",
             media_type='application/pdf'
         )
     except Exception as e:
@@ -519,7 +465,7 @@ def export_all_excel(Authorize: AuthJWT = Depends()):
 
         wb = Workbook()
         ws = wb.active
-        ws.title = "All REDX Requirements"
+        ws.title = "All VMS Requirements"
 
         ws.append([
             "Customer", "Project", "Location", "Assigned", "Bitrate (Mbps)",
@@ -545,7 +491,7 @@ def export_all_excel(Authorize: AuthJWT = Depends()):
                     cam["qty"]
                 ])
 
-        filename = f"redx_all_requirements_{datetime.now().strftime('%Y%m%d')}.xlsx"
+        filename = f"vms_all_requirements_{datetime.now().strftime('%Y%m%d')}.xlsx"
         path = os.path.join(EXPORT_DIR, filename)
         wb.save(path)
         
@@ -620,7 +566,7 @@ def export_filtered_excel(
 
         wb = Workbook()
         ws = wb.active
-        ws.title = "Filtered REDX Requirements"
+        ws.title = "Filtered VMS Requirements"
 
         ws.append(["Export Date", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
         if query:
@@ -671,7 +617,7 @@ def export_filtered_excel(
                     doc.get("storage_tb", "N/A")
                 ])
 
-        filename_parts = ["redx_export"]
+        filename_parts = ["vms_export"]
         if customer_name:
             filename_parts.append(f"cust_{customer_name[:20]}")
         if project_name:

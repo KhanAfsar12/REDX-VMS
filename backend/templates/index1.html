@@ -1259,10 +1259,10 @@
         return;
       }
 
-      const customerName = document.getElementById("customer_name").value;
-      const projectName = document.getElementById("project_name").value;
-      const location = document.getElementById('location').value;
-      const assignedPerson = document.getElementById('assigned_person').value;
+      const customerName = document.getElementById("customer_name").value.trim();
+      const projectName = document.getElementById("project_name").value.trim();
+      const location = document.getElementById('location').value.trim();
+      const assignedPerson = document.getElementById('assigned_person').value.trim();
 
       if (!customerName || !projectName || !location || !assignedPerson) {
         showToast("All fields of Project Information are required", "error");

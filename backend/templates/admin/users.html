@@ -694,12 +694,16 @@ function showToast(message, type = "info") {
 document.getElementById('addUserForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const user = {
-    username: document.getElementById('username').value,
-    email: document.getElementById('email').value,
+    username: document.getElementById('username').value.trim(),
+    email: document.getElementById('email').value.trim(),
     password: document.getElementById('password').value,
     role: document.getElementById('role').value,
     is_active: document.getElementById('addStatus').checked
   };
+  if(!user.username){
+    showToast('Username is required', 'error');
+    return;
+  }
   try {
     const response = await authFetch(`${baseURLs}/users`, {
       method: 'POST',
@@ -776,7 +780,7 @@ async function deleteUser(username) {
     });
     if (!response) return;
     
-    await fetchUsers();  // Will refresh and rebuild grid
+    await fetchUsers();
     showToast('User deleted successfully!');
   } catch (error) {
     console.error('Error deleting user:', error);

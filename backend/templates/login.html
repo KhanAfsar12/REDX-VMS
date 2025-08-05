@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Login - RedX VMS</title>
+    <title>Login - VMS Calculator</title>
     <style>
         :root {
             --primary-color: #e63946;
@@ -31,45 +31,35 @@
 
         .main-container {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-around;
-            width: 900px;
+            width: 400px;
             max-width: 90%;
         }
 
-        .left-section {
-            width: 50%;
-            padding-right: 50px;
+        .login-header {
             text-align: center;
+            margin-bottom: 30px;
+            width: 100%;
         }
 
-        .logo-image {
-            max-width: 100%;
-            height: auto;
-        }
-
-        .tagline {
+        .login-header p {
             font-size: 24px;
-            color: #333;
-            margin-top: 20px;
-            text-align: left;
-        }
-
-        .right-section {
-            width: 50%;
-            padding-left: 20px;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin: 0;
         }
 
         .login-box {
             background-color: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             width: 100%;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             text-align: left;
         }
 
@@ -84,12 +74,12 @@
 
         input:focus {
             outline: none;
-            border-color: #d32f2f;
-            box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.2);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.2);
         }
 
         .btn-login {
-            background-color: #d32f2f;
+            background-color: var(--primary-color);
             color: white;
             border: none;
             border-radius: 5px;
@@ -99,10 +89,11 @@
             width: 100%;
             cursor: pointer;
             margin-top: 10px;
+            transition: background-color 0.3s;
         }
 
         .btn-login:hover {
-            background-color: #b71c1c;
+            background-color: var(--danger-color);
         }
 
         .divider {
@@ -111,7 +102,7 @@
         }
 
         .login-link {
-            color: #d32f2f;
+            color: var(--primary-color);
             text-decoration: none;
             font-weight: bold;
         }
@@ -121,24 +112,19 @@
         }
 
         .error-message {
-            color: #d32f2f;
+            color: var(--danger-color);
             margin-top: 10px;
             font-size: 14px;
+            text-align: center;
         }
 
         @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
+            .login-box {
+                padding: 20px;
             }
-
-            .left-section,
-            .right-section {
-                width: 100%;
-                padding: 0;
-            }
-
-            .left-section {
-                margin-bottom: 30px;
+            
+            .login-header p {
+                font-size: 20px;
             }
         }
     </style>
@@ -146,45 +132,52 @@
 
 <body>
     <div class="main-container">
-        <!-- <div class="left-section">
-            <img src="{{ url_for('static', path='img/REDX Logo.png') }}" alt="RedX Logo" class="logo-image">
-        </div> -->
+        <div class="login-header">
+            <p>Login to VMS Calculator</p>
+        </div>
 
-        <div class="right-section">
-            <div class="login-box">
-                <form id="login-form">
-                    <div class="form-group">
-                        <input type="text" name="username" placeholder="Username" required>
-                    </div>
-
-                    <div class="form-group">
-                        <input type="password" name="password" placeholder="Password" required>
-                    </div>
-
-                    <button type="submit" class="btn-login">Login</button>
-                </form>
-
-                <div id="error-message" class="error-message"></div>
-
-                <div class="divider"></div>
-                <div>
-                    Go to <a href="/" class="login-link">home</a> page
+        <div class="login-box">
+            <form id="login-form">
+                <div class="form-group">
+                    <input type="text" name="username" placeholder="Username" required>
                 </div>
+
+                <div class="form-group">
+                    <input type="password" name="password" placeholder="Password" required>
+                </div>
+
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+
+            <div id="error-message" class="error-message"></div>
+
+            <div style="text-align: center;" id="home-renderer">
+                
             </div>
         </div>
     </div>
 
     <script>
+        const baseURL = `${window.location.protocol}//${window.location.hostname}:${window.location.port || 80}`;
+        
         const form = document.getElementById('login-form');
         const errorMessage = document.getElementById('error-message');
+
+        const refreshToken = localStorage.getItem("refresh_token");
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const formData = new FormData(form);
+            const username = formData.get('username')?.trim();
 
+            if(!username){
+                showToast("Username cannot be empty", "error");
+                return;
+            }
+            
             try {
-                const response = await fetch('/login', {
+                const response = await fetch(`${baseURL}/login`, {
                     method: 'POST',
                     body: formData
                 });
@@ -254,7 +247,20 @@
                 }, 300);
             }, 3000);
         }
+
+        if(!refreshToken){
+            showToast("You have to login");
+        }
+        else{
+            const loginBox = document.querySelector('.login-box');
+            const divider = document.createElement('div');
+            divider.className = 'divider';
+            
+            let homeRenderer = document.getElementById('home-renderer');
+            loginBox.insertBefore(divider, homeRenderer);
+
+            homeRenderer.innerHTML = `Go to <a href="/" class="login-link">home</a> page`;
+        }
     </script>
 </body>
-
 </html>

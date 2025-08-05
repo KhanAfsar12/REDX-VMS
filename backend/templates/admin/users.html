@@ -33,7 +33,7 @@
     .navbar-nav {
       color: var(--dark-color);
       font-weight: 500;
-      font-size: 16px;
+      font-size: 23px;
     }
 
     #currentUser {
@@ -382,6 +382,7 @@ let gridApis = null;
 let refreshTimers = null;
 
 // DOM elements
+const baseURLs = `${window.location.protocol}//${window.location.hostname}:${window.location.port || 80}`;
 const quickFilterInput = document.getElementById('quickFilterInput');
 const logoutBtn = document.getElementById('logoutBtn');
 const currentUserSpan = document.getElementById('currentUser');
@@ -409,7 +410,7 @@ function checkAuth() {
   } else {
     // User is not authenticated
     logoutBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Login';
-    logoutBtn.onclick = () => window.location.href = '/login';
+    logoutBtn.onclick = () => window.location.href = `${baseURLs}/login`;
     currentUserSpan.textContent = '';
   }
 }
@@ -421,7 +422,7 @@ function handleLogout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('role');
-    window.location.href = '/';
+    window.location.href = '/login';
   }, 1000);
 }
 
@@ -448,7 +449,7 @@ function scheduleTokenRefresh(expiresInMinutes = 15) {
 // Refresh token function
 async function refreshAccessToken() {
   try {
-    const response = await fetch('/refresh', {
+    const response = await fetch(`${baseURLs}/refresh`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${refreshTokens}`
@@ -477,7 +478,7 @@ function handleUnauthorized() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('role');
-    window.location.href = '/login';
+    window.location.href = `${baseURLs}/login`;
   }, 2000);
 }
 
@@ -550,7 +551,7 @@ async function authFetch(url, options = {}) {
 // Fetch current user info
 async function fetchCurrentUser() {
   try {
-    const response = await authFetch('/protected');
+    const response = await authFetch(`${baseURLs}/protected`);
     
     if (!response) return;
     
@@ -565,7 +566,7 @@ async function fetchCurrentUser() {
 // Fetch users from API
 async function fetchUsers() {
   try {
-    const response = await authFetch('/users');
+    const response = await authFetch(`${baseURLs}/users`);
 
     if (!response) return;
     
@@ -693,14 +694,18 @@ function showToast(message, type = "info") {
 document.getElementById('addUserForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const user = {
-    username: document.getElementById('username').value,
-    email: document.getElementById('email').value,
+    username: document.getElementById('username').value.trim(),
+    email: document.getElementById('email').value.trim(),
     password: document.getElementById('password').value,
     role: document.getElementById('role').value,
     is_active: document.getElementById('addStatus').checked
   };
+  if(!user.username){
+    showToast('Username is required', 'error');
+    return;
+  }
   try {
-    const response = await authFetch('/users', {
+    const response = await authFetch(`${baseURLs}/users`, {
       method: 'POST',
       body: JSON.stringify(user)
     });
@@ -739,7 +744,7 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
   const newPassword = document.getElementById('editPassword').value;
   if (newPassword) updateData.password = newPassword;
   try {
-    const response = await authFetch(`/users/${username}`, {
+    const response = await authFetch(`${baseURLs}/users/${username}`, {
       method: 'PUT',
       body: JSON.stringify(updateData)
     });
@@ -756,7 +761,7 @@ document.getElementById('editUserForm').addEventListener('submit', async (e) => 
 
 function confirmDelete(username) {
   userToDelete = username;
-  document.getElementById('deleteConfirmMessage').textContent = `Are you sure you want to delete user "${username}"? This action cannot be undone.`;
+  document.getElementById('deleteConfirmMessage').innerHTML = `Are you sure you want to delete user <b>${username}</b>? This action cannot be undone.`;
   new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
 }
 
@@ -770,12 +775,12 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
 
 async function deleteUser(username) {
   try {
-    const response = await authFetch(`/users/${username}`, {
+    const response = await authFetch(`${baseURLs}/users/${username}`, {
       method: 'DELETE'
     });
     if (!response) return;
     
-    await fetchUsers();  // Will refresh and rebuild grid
+    await fetchUsers();
     showToast('User deleted successfully!');
   } catch (error) {
     console.error('Error deleting user:', error);
@@ -792,7 +797,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('role');
-    window.location.href = '/login';
+    window.location.href = `${baseURLs}/login`;
     return;
   }
 

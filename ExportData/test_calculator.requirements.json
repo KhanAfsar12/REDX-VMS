@@ -1,0 +1,585 @@
+[{
+  "_id": "05f31fc8-4b47-455c-baa6-6a95bec6e8e9",
+  "customer_name": "Nath",
+  "project_name": "REDX_VMS",
+  "location": "Austin taxes, USA",
+  "assigned_person": "Nitin",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "12MP (4000x3072)",
+      "fps": 30,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 100,
+      "bitrate_kbps": 12000
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "9MP (3072x3072)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 15,
+      "bitrate_kbps": 7500
+    }
+  ],
+  "created_at": {
+    "$date": "2025-07-31T10:04:58.576Z"
+  },
+  "bandwidth": 1312.5,
+  "storage_tb": 36.45,
+  "server_spec": {
+    "cpu": "16-core",
+    "ram_gb": 64,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "nitin"
+},
+{
+  "_id": "f06190b2-508a-4f63-9f60-3ac9d379eb04",
+  "customer_name": "Honeywell",
+  "project_name": "REDX_VMS",
+  "location": "Bengluru, Karnataka",
+  "assigned_person": "nafees",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 1,
+      "retention_days": 30,
+      "qty": 1,
+      "bitrate_kbps": 4166
+    }
+  ],
+  "created_at": {
+    "$date": "2025-07-31T10:20:31.105Z"
+  },
+  "bandwidth": 4.17,
+  "storage_tb": 0.06,
+  "server_spec": {
+    "cpu": "6-core",
+    "ram_gb": 32,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "nafees"
+},
+{
+  "_id": "97412074-8139-4c1f-92d2-a35fd18420bd",
+  "customer_name": "Demo",
+  "project_name": "Demo VMS",
+  "location": "Lucknown, UP",
+  "assigned_person": "James",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 1,
+      "retention_days": 30,
+      "qty": 1,
+      "bitrate_kbps": 4166
+    }
+  ],
+  "created_at": {
+    "$date": "2025-07-31T12:26:14.698Z"
+  },
+  "bandwidth": 4.17,
+  "storage_tb": 0.06,
+  "server_spec": {
+    "cpu": "6-core",
+    "ram_gb": 32,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "superadmin"
+},
+{
+  "_id": "a41f79da-1edf-4858-aae8-6759397e6b89",
+  "customer_name": "Demo2",
+  "project_name": "Demo VMS",
+  "location": "Lucknown, UP",
+  "assigned_person": "James",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 1,
+      "retention_days": 30,
+      "qty": 1,
+      "bitrate_kbps": 4166
+    }
+  ],
+  "created_at": {
+    "$date": "2025-07-31T12:26:54.385Z"
+  },
+  "bandwidth": 4.17,
+  "storage_tb": 0.06,
+  "server_spec": {
+    "cpu": "6-core",
+    "ram_gb": 32,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "superadmin"
+},
+{
+  "_id": "d3a906f3-502b-441c-a484-994678afbf29",
+  "customer_name": "jks",
+  "project_name": "REDX_VMS Portal",
+  "location": "Kolkata, West Bangal",
+  "assigned_person": "Gosling",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "7MP (3072x2304)",
+      "fps": 57,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 100,
+      "bitrate_kbps": 13300
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "9MP (3072x3072)",
+      "fps": 30,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 12,
+      "bitrate_kbps": 9000
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-01T12:35:46.591Z"
+  },
+  "bandwidth": 1438,
+  "storage_tb": 34.99,
+  "server_spec": {
+    "cpu": "12-core",
+    "ram_gb": 64,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "afsarkhan"
+},
+{
+  "_id": "c76876b4-b3e0-468f-b6e7-b2d2af0c7dda",
+  "customer_name": "jks",
+  "project_name": "REDX_VMS Portal",
+  "location": "Kolkata, West Bangal",
+  "assigned_person": "Gosling",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "7MP (3072x2304)",
+      "fps": 57,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 100,
+      "bitrate_kbps": 13300
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "9MP (3072x3072)",
+      "fps": 30,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 12,
+      "bitrate_kbps": 9000
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-01T12:51:48.262Z"
+  },
+  "bandwidth": 1438,
+  "storage_tb": 34.99,
+  "server_spec": {
+    "cpu": "12-core",
+    "ram_gb": 64,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "afsarkhan"
+},
+{
+  "_id": "82b48675-9a1d-4ad1-84e6-4b735b3ba262",
+  "customer_name": "jks",
+  "project_name": "REDX_VMS Portal",
+  "location": "Kolkata, West Bangal",
+  "assigned_person": "Gosling",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "7MP (3072x2304)",
+      "fps": 57,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 100,
+      "bitrate_kbps": 13300
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "9MP (3072x3072)",
+      "fps": 30,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 12,
+      "bitrate_kbps": 9000
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-01T12:53:09.556Z"
+  },
+  "bandwidth": 1438,
+  "storage_tb": 34.99,
+  "server_spec": {
+    "cpu": "12-core",
+    "ram_gb": 64,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "afsarkhan"
+},
+{
+  "_id": "9a4dc467-d627-467b-aeff-44e69b61db61",
+  "customer_name": "dfkvjesni",
+  "project_name": "REDX_VMS Portal",
+  "location": "Kolkata, West vsdvfd",
+  "assigned_person": "Gosling",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "7MP (3072x2304)",
+      "fps": 60,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 100,
+      "bitrate_kbps": 14000
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "9MP (3072x3072)",
+      "fps": 40,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 12,
+      "bitrate_kbps": 12000
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-01T12:55:06.802Z"
+  },
+  "bandwidth": 1544,
+  "storage_tb": 46.66,
+  "server_spec": {
+    "cpu": "12-core",
+    "ram_gb": 64,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "afsarkhan"
+},
+{
+  "_id": "8553c13e-1025-45de-b0af-783dba5eaed6",
+  "customer_name": "dfkvjesni",
+  "project_name": "REDX_VMS Portal",
+  "location": "Kolkata, West vsdvfd",
+  "assigned_person": "Gosling",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "7MP (3072x2304)",
+      "fps": 60,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 100,
+      "bitrate_kbps": 14000
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "9MP (3072x3072)",
+      "fps": 40,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 12,
+      "bitrate_kbps": 12000
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 5,
+      "bitrate_kbps": 4166
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 30,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 1,
+      "bitrate_kbps": 5000
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-01T12:56:31.666Z"
+  },
+  "bandwidth": 1569.83,
+  "storage_tb": 1.62,
+  "server_spec": {
+    "cpu": "12-core",
+    "ram_gb": 64,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "afsarkhan"
+},
+{
+  "_id": "58c278fe-8e6b-4fa4-8404-129e5242ea43",
+  "customer_name": "dfkvjesni",
+  "project_name": "REDX_VMS Portal",
+  "location": "Kolkata, West vsdvfd",
+  "assigned_person": "Gosling",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "7MP (3072x2304)",
+      "fps": 50,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 100,
+      "bitrate_kbps": 11666
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "9MP (3072x3072)",
+      "fps": 40,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 12,
+      "bitrate_kbps": 12000
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 5,
+      "bitrate_kbps": 4166
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 30,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 1,
+      "bitrate_kbps": 5000
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-01T12:59:55.602Z"
+  },
+  "bandwidth": 1336.43,
+  "storage_tb": 1.62,
+  "server_spec": {
+    "cpu": "12-core",
+    "ram_gb": 64,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "afsarkhan"
+},
+{
+  "_id": "c64b4e9c-45ec-494c-b00f-b001a1e2272e",
+  "customer_name": "n",
+  "project_name": "afsar",
+  "location": "Austin taxes, USA",
+  "assigned_person": "a",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 1,
+      "retention_days": 30,
+      "qty": 1,
+      "bitrate_kbps": 4166
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-04T05:53:50.264Z"
+  },
+  "bandwidth": 4.17,
+  "storage_tb": 0.06,
+  "server_spec": {
+    "cpu": "6-core",
+    "ram_gb": 32,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "superadmin"
+},
+{
+  "_id": "23ac0b54-d05f-453c-9dfe-8f74d3349934",
+  "customer_name": "n",
+  "project_name": "afsar khan",
+  "location": "Austin taxes, USA",
+  "assigned_person": "a",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 1,
+      "retention_days": 30,
+      "qty": 1,
+      "bitrate_kbps": 4166
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-04T05:54:05.032Z"
+  },
+  "bandwidth": 4.17,
+  "storage_tb": 0.06,
+  "server_spec": {
+    "cpu": "6-core",
+    "ram_gb": 32,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "superadmin"
+},
+{
+  "_id": "f443ba7b-8c0c-469e-a8a7-465b46339a29",
+  "customer_name": "falsk",
+  "project_name": "Demo",
+  "location": "er",
+  "assigned_person": "vwf",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 1,
+      "retention_days": 30,
+      "qty": 1,
+      "bitrate_kbps": 4166
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-04T07:40:47.051Z"
+  },
+  "bandwidth": 4.17,
+  "storage_tb": 0.06,
+  "server_spec": {
+    "cpu": "6-core",
+    "ram_gb": 32,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "superadmin"
+},
+{
+  "_id": "d4227350-cb57-4606-b63c-2277ea12ea6a",
+  "customer_name": "DB",
+  "project_name": "REDX_VMS",
+  "location": "Lucknown, UP",
+  "assigned_person": "nafees",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "12MP (4000x3072)",
+      "fps": 42,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 100,
+      "bitrate_kbps": 16800
+    },
+    {
+      "name": "Honeywell",
+      "resolution": "5MP (2560x1920)",
+      "fps": 25,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 1,
+      "bitrate_kbps": 4166
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-05T10:30:07.273Z"
+  },
+  "bandwidth": 1684.17,
+  "storage_tb": 1.35,
+  "server_spec": {
+    "cpu": "16-core",
+    "ram_gb": 64,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "afsarkhan"
+},
+{
+  "_id": "c3ca8ce6-3664-46fe-b8d9-c85280815017",
+  "customer_name": "Neero",
+  "project_name": "RDX",
+  "location": "Neral",
+  "assigned_person": "D",
+  "camera_configs": [
+    {
+      "name": "Honeywell",
+      "resolution": "8MP (3840x2160)",
+      "fps": 40,
+      "codec": "H265",
+      "record_hour": 24,
+      "retention_days": 30,
+      "qty": 20,
+      "bitrate_kbps": 10666
+    }
+  ],
+  "created_at": {
+    "$date": "2025-08-05T10:43:32.019Z"
+  },
+  "bandwidth": 213.32,
+  "storage_tb": 69.12,
+  "server_spec": {
+    "cpu": "8-core",
+    "ram_gb": 32,
+    "hdd_tb": "2 x 1",
+    "nic": "1G"
+  },
+  "created_by": "afsarkhan"
+}]

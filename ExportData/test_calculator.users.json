@@ -1,0 +1,311 @@
+[{
+  "_id": {
+    "$oid": "688b3c120b216c91d89eb82b"
+  },
+  "username": "superadmin",
+  "hashed_password": "$2b$12$TSpXlC6FVlAqcKR/OexiHOzg2fCY0MM1wGxgVjx55Bz7PVYMpAzVW",
+  "email": "superadmin@gmail.com",
+  "full_name": "Super Admin",
+  "is_active": true,
+  "role": "superadmin",
+  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzdXBlcmFkbWluIiwiaWF0IjoxNzU0Mzk3NjUyLCJuYmYiOjE3NTQzOTc2NTIsImp0aSI6IjQ1NjU5ZjdlLTBkYjktNGYxMS1hNjJhLTU4MWNhNGZlYmFiYyIsImV4cCI6MTc1NTAwMjQ1MiwidHlwZSI6InJlZnJlc2gifQ.iru2udk1xYU6d9z1W7AAvVEbfWUx-dbAYAikVx4PAoI"
+},
+{
+  "_id": {
+    "$oid": "688b3c554fa63261118ac6aa"
+  },
+  "username": "afsarkhan",
+  "email": "afsar@gmail.com",
+  "role": "admin",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$inZn1Sd79U2Wa8.lxZh.BeHSh8c5.237QYApeH2aqODum7Xu8Pxtu",
+  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZnNhcmtoYW4iLCJpYXQiOjE3NTQzOTA5MjYsIm5iZiI6MTc1NDM5MDkyNiwianRpIjoiZDQzNmM2ZjQtZjUyNS00MTYyLTljZGQtZDMyYjI3MGQ3YmQxIiwiZXhwIjoxNzU0OTk1NzI2LCJ0eXBlIjoicmVmcmVzaCJ9.yihKBtCF46g82fDSDo-VaEfrIMdthsrKbhoNSjNQ7Z4"
+},
+{
+  "_id": {
+    "$oid": "688b51d8e4764f94073b9493"
+  },
+  "username": "django",
+  "email": "django@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$9rjfccB669RNczFNkbPCpOiHStvECN4aqqezv8iKAY5o/VWgXDI7G"
+},
+{
+  "_id": {
+    "$oid": "688b6045b6f3f1feb02398eb"
+  },
+  "username": "nitin",
+  "email": "nitin@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$v6ZGBuwarKP.s2WQavQ26ey6vxfy3g8SM0vIXOFprvhLff8i/XwQe"
+},
+{
+  "_id": {
+    "$oid": "688b6a7f677431f90eeefb87"
+  },
+  "username": "gagan",
+  "email": "gagan@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$MUlxHr2nUkDwv4fTYVOF/.MixGtlSq7R2ghX4a3dneOrXdAS449We",
+  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJnYWdhbiIsImlhdCI6MTc1NDMwMTM0MCwibmJmIjoxNzU0MzAxMzQwLCJqdGkiOiI2OTZhNGE2OS1jZTAwLTQ4MDYtOWM5ZS1hYzYwYjE1MTMxNDEiLCJleHAiOjE3NTQ5MDYxNDAsInR5cGUiOiJyZWZyZXNoIn0.C-5G0RRsIVCMystqWWje49zvoekYSOVm75nlXtN0DUo"
+},
+{
+  "_id": {
+    "$oid": "68906f28743893e7f51bacae"
+  },
+  "username": "arjun",
+  "email": "arjun@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$jVKOdibofTwUS/l39RZ6Rele8hAGCX5qOL7dqBvGVHyJFMk1xyNQO"
+},
+{
+  "_id": {
+    "$oid": "68906f28743893e7f51bacaf"
+  },
+  "username": "neha",
+  "email": "neha@gmail.com",
+  "role": "admin",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$RzsWh6dEvEhRBznHWwjxHulACA9fa0aMOPr5lSXOMQojlPs.kCPVG"
+},
+{
+  "_id": {
+    "$oid": "68906f28743893e7f51bacb0"
+  },
+  "username": "rohan",
+  "email": "rohan@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$ewVPGzmcbp8gaTV5OeP8z.k2S5irI.pAYFcHDEah3uVPBIa1rAE7a"
+},
+{
+  "_id": {
+    "$oid": "68906f29743893e7f51bacb1"
+  },
+  "username": "sakshi",
+  "email": "sakshi@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$UAq.iHFryka6.LzAaymB2uDZZAk.y1Mmd.QPUw0MutnhCdXhLd/au"
+},
+{
+  "_id": {
+    "$oid": "68906f2a743893e7f51bacb2"
+  },
+  "username": "karan",
+  "email": "karan@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$mHRp0HF5PxvjWiyEy0wqeO8t459r.bc8E1G6waNgv.bwovIt2MqCy"
+},
+{
+  "_id": {
+    "$oid": "68906f2a743893e7f51bacb3"
+  },
+  "username": "mukesh",
+  "email": "mukesh@gmail.com",
+  "role": "admin",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$fjv61McRSbWxzZ01TAtxbOt15U2NvM7ZYJf4ByvMgkCBfxSqHGKWm"
+},
+{
+  "_id": {
+    "$oid": "68906f2a743893e7f51bacb4"
+  },
+  "username": "rekha",
+  "email": "rekha@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$X3YeLYB.tORZWYUuoi/tseFmVsmG8SCKFkwKAA8pa8cEpNZKrkc/a"
+},
+{
+  "_id": {
+    "$oid": "68906f2b743893e7f51bacb5"
+  },
+  "username": "priya",
+  "email": "priya@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$XMuvpqaVzF2HanDL2ksNvOV/4cBZtzydOX4g.ZWgVXD0MSnaeJyza"
+},
+{
+  "_id": {
+    "$oid": "68906f2b743893e7f51bacb6"
+  },
+  "username": "suresh",
+  "email": "suresh@gmail.com",
+  "role": "admin",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$t8/Iurjx6T0jKip9i4U00Op5v00cF8i0kd93e5wGYAVJ0imP27PBK"
+},
+{
+  "_id": {
+    "$oid": "68906f2c743893e7f51bacb7"
+  },
+  "username": "deepak",
+  "email": "deepak@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$PBAewDuVrI5OZIr9i28E4eyfp6GRYxvC.uwVkazdFTZ.qWeM8aJYy"
+},
+{
+  "_id": {
+    "$oid": "68906f2c743893e7f51bacb8"
+  },
+  "username": "meena",
+  "email": "meena@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$Inlvz/3xQJ8Bul7S2M8ME.sKJ2TTFvnEnkZK1URPhzpyylYyyfuiK"
+},
+{
+  "_id": {
+    "$oid": "68906f2d743893e7f51bacb9"
+  },
+  "username": "avinash",
+  "email": "avinash@gmail.com",
+  "role": "admin",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$kqGe3rE9DiCDzHP8ScBg6uzGiwAIi4mrX7I.vc3TU4vg3bOuaEwqq"
+},
+{
+  "_id": {
+    "$oid": "68906f2d743893e7f51bacba"
+  },
+  "username": "zoya",
+  "email": "zoya@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$0Qq2CEYWhLA8p.SNvSqhV.0c8lCyH.Z4Vz9l1RnSsc9.sHqN0iW3a"
+},
+{
+  "_id": {
+    "$oid": "68906f2e743893e7f51bacbb"
+  },
+  "username": "jatin",
+  "email": "jatin@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$eNZqf8E5x8S7fgN8EpZTnuZCfp0QD2Xdzu.RiMl9e/sTYlOFujHJK"
+},
+{
+  "_id": {
+    "$oid": "68906f2e743893e7f51bacbc"
+  },
+  "username": "fatima",
+  "email": "fatima@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$J0TnKs01N4E6js.yiw6R8uVi1wXTbXIqGsIwFA13U3vbpkCLu3xNe"
+},
+{
+  "_id": {
+    "$oid": "68906f2e743893e7f51bacbd"
+  },
+  "username": "rajat",
+  "email": "rajat@gmail.com",
+  "role": "admin",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$WgrER.cm4IQBm8B3rSi1W.kop0VwtLNjFKRq2VtyFDWObWVGkp3PO"
+},
+{
+  "_id": {
+    "$oid": "68906f2f743893e7f51bacbe"
+  },
+  "username": "pooja",
+  "email": "pooja@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$J2FHTmUwk0a9KAdUzBK1rOvL.Z9ccB.RdYm5gzBoPifyzM5oNsDsy"
+},
+{
+  "_id": {
+    "$oid": "68906f2f743893e7f51bacbf"
+  },
+  "username": "imran",
+  "email": "imran@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$nsx9Sgcp83Qsz4rxx356QeaAgqNkwn021.ew4GcB3Wi9LAWyZ/whu"
+},
+{
+  "_id": {
+    "$oid": "68906f30743893e7f51bacc0"
+  },
+  "username": "ravi",
+  "email": "ravi@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$gcLZdy.1Y5JUZ/mKa99xAODQWGsJegZ7FXPxjYzrCGVdyLB9pblOO"
+},
+{
+  "_id": {
+    "$oid": "68906f30743893e7f51bacc1"
+  },
+  "username": "simran",
+  "email": "simran@gmail.com",
+  "role": "admin",
+  "is_active": true,
+  "created_by": "superadmin",
+  "hashed_password": "$2b$12$NM7SzXVKuOrkI1hctA3pL.uPAZ/Hg9Vum/RAllBoLKQdhENB8EXqy"
+},
+{
+  "_id": {
+    "$oid": "6891dc3e5da576b878102aa6"
+  },
+  "username": "java",
+  "email": "java@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "afsarkhan",
+  "hashed_password": "$2b$12$P6gAGFsF/QVZ4Dw6/rRuleRnYNbbhrceU.WjOmmquSDutU/fbgwHS"
+},
+{
+  "_id": {
+    "$oid": "6891dd983568e03244b6f778"
+  },
+  "username": "python",
+  "email": "python@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "afsarkhan",
+  "hashed_password": "$2b$12$/ACWEZnodzRW1C7URKv8/.usv1mLFg/IdsTCtugwTJkELHarHj/g6"
+},
+{
+  "_id": {
+    "$oid": "6891de993568e03244b6f779"
+  },
+  "username": "JavaScript",
+  "email": "javascript@gmail.com",
+  "role": "user",
+  "is_active": true,
+  "created_by": "afsarkhan",
+  "hashed_password": "$2b$12$uwBWfd8zPJsSH3JcRl1FMeAfPoRq4Mbq2m5McKaAsPdV.Wx3ZvHzG"
+}]

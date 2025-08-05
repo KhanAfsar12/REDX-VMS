@@ -1,1 +1,0 @@
-1) Some time all data from db has been truncated.
